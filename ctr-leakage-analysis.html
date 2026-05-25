@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="robots" content="noindex, nofollow">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CTR Leakage Analysis Dashboard</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --ink: #0f172a;
+      --muted: #64748b;
+      --line: #e2e8f0;
+      --white: #ffffff;
+      --soft: #f1f5f9;
+      --soft-blue: #eff6ff;
+      --navy: #020617;
+      --blue: #2563eb;
+      --cyan: #0891b2;
+      --violet: #7c3aed;
+      --green: #16a34a;
+      --amber: #f59e0b;
+      --red: #dc2626;
+      --pink: #db2777;
+      --radius: 20px;
+      --shadow: 0 20px 48px rgba(15, 23, 42, 0.11);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.45;
+    }
+
+    .hero {
+      color: #ffffff;
+      padding: 34px 28px 30px;
+      background:
+        radial-gradient(circle at 12% 18%, rgba(37, 99, 235, .34), transparent 32%),
+        radial-gradient(circle at 83% 8%, rgba(219, 39, 119, .24), transparent 26%),
+        linear-gradient(135deg, #020617 0%, #0f172a 52%, #111827 100%);
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+
+    .hero-inner {
+      max-width: 1480px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: minmax(0, 1.42fr) minmax(320px, .58fr);
+      gap: 28px;
+      align-items: end;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      padding: 7px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.06);
+      color: #cbd5e1;
+      font-size: 12px;
+      font-weight: 850;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    h1 {
+      margin: 16px 0 10px;
+      font-size: clamp(34px, 4.5vw, 64px);
+      line-height: 1.01;
+      letter-spacing: -.055em;
+    }
+
+    .hero p {
+      margin: 0;
+      max-width: 980px;
+      color: #cbd5e1;
+      font-size: 16px;
+    }
+
+    .hero-card {
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.08);
+      border-radius: var(--radius);
+      padding: 18px;
+      box-shadow: 0 16px 44px rgba(0,0,0,.26);
+    }
+
+    .hero-card strong { color: #fff; }
+    .hero-card span { display: block; margin-top: 6px; color: #cbd5e1; font-size: 13px; }
+
+    .shell {
+      max-width: 1480px;
+      margin: 0 auto;
+      padding: 22px 28px 60px;
+    }
+
+    .card {
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px;
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(150px, 1fr));
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 7px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+    }
+
+    select, input[type="range"] { width: 100%; }
+
+    select {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: white;
+      color: var(--ink);
+      padding: 12px 13px;
+      font-size: 14px;
+      font-weight: 650;
+      outline: none;
+    }
+
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 14px 0 22px;
+      position: sticky;
+      top: 0;
+      z-index: 8;
+      padding: 12px 0;
+      background: rgba(248,250,252,.94);
+      backdrop-filter: blur(14px);
+    }
+
+    .tab-btn {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: #334155;
+      border-radius: 999px;
+      padding: 10px 14px;
+      font-weight: 850;
+      cursor: pointer;
+      box-shadow: 0 9px 20px rgba(15,23,42,.06);
+      transition: .18s ease;
+    }
+
+    .tab-btn:hover { transform: translateY(-1px); }
+    .tab-btn.active { background: var(--ink); color: white; border-color: var(--ink); }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .grid { display: grid; gap: 18px; }
+    .grid.two { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+    .grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .grid.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .grid.kpis { grid-template-columns: repeat(7, minmax(0, 1fr)); margin-bottom: 18px; }
+
+    .kpi {
+      position: relative;
+      overflow: hidden;
+      min-height: 142px;
+    }
+
+    .kpi:after {
+      content: "";
+      position: absolute;
+      right: -48px;
+      bottom: -52px;
+      width: 124px;
+      height: 124px;
+      border-radius: 50%;
+      background: rgba(37,99,235,.09);
+    }
+
+    .kpi-title {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .065em;
+      margin-bottom: 8px;
+    }
+
+    .kpi-value {
+      font-size: 30px;
+      line-height: 1;
+      font-weight: 950;
+      letter-spacing: -.055em;
+      margin-bottom: 10px;
+    }
+
+    .kpi-note { color: var(--muted); font-size: 12px; max-width: 190px; }
+
+    .section-title {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 18px;
+      margin: 28px 0 14px;
+    }
+
+    .section-title h2 {
+      margin: 0;
+      font-size: 26px;
+      letter-spacing: -.04em;
+    }
+
+    .section-title p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      max-width: 980px;
+    }
+
+    .formula-box {
+      margin: 12px 0;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #f8fafc;
+      color: #334155;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 13px;
+      overflow-x: auto;
+    }
+
+    .formula-box strong { color: var(--ink); }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      padding: 5px 9px;
+      font-size: 12px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+    .good { color: var(--green); background: rgba(22,163,74,.10); }
+    .warn { color: var(--amber); background: rgba(245,158,11,.13); }
+    .bad { color: var(--red); background: rgba(220,38,38,.10); }
+    .info { color: var(--blue); background: rgba(37,99,235,.10); }
+    .violet { color: var(--violet); background: rgba(124,58,237,.10); }
+    .pink { color: var(--pink); background: rgba(219,39,119,.10); }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { text-align: left; border-bottom: 1px solid var(--line); padding: 12px 10px; vertical-align: top; }
+    th { color: var(--muted); background: #f8fafc; font-size: 11px; text-transform: uppercase; letter-spacing: .065em; }
+    tr:last-child td { border-bottom: 0; }
+    .metric-name { font-weight: 900; }
+    .small { color: var(--muted); font-size: 12px; }
+
+    .score-panel {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 24px;
+      align-items: center;
+    }
+
+    .donut {
+      width: 234px;
+      height: 234px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      margin: 0 auto;
+      background: conic-gradient(var(--red) 0deg, var(--red) 137deg, #e2e8f0 137deg, #e2e8f0 360deg);
+      position: relative;
+    }
+
+    .donut:before {
+      content: "";
+      position: absolute;
+      width: 164px;
+      height: 164px;
+      background: white;
+      border-radius: 50%;
+      box-shadow: inset 0 0 0 1px var(--line);
+    }
+
+    .donut-inner { position: relative; text-align: center; }
+    .donut-inner strong { display: block; font-size: 56px; line-height: .95; letter-spacing: -.065em; }
+    .donut-inner span { color: var(--muted); font-weight: 850; }
+
+    .bar-row, .leak-row, .funnel-step {
+      display: grid;
+      grid-template-columns: 190px 1fr 70px;
+      gap: 12px;
+      align-items: center;
+      font-size: 13px;
+      margin: 10px 0;
+    }
+
+    .bar-bg {
+      height: 10px;
+      background: #e2e8f0;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--blue), var(--cyan));
+      width: 50%;
+    }
+
+    .loss-fill { background: linear-gradient(90deg, var(--red), var(--pink)); }
+    .gain-fill { background: linear-gradient(90deg, var(--green), var(--cyan)); }
+    .warn-fill { background: linear-gradient(90deg, var(--amber), var(--red)); }
+
+    .chart {
+      height: 280px;
+      display: flex;
+      align-items: flex-end;
+      gap: 12px;
+      padding: 18px 8px 0;
+      border-bottom: 1px solid var(--line);
+      border-left: 1px solid var(--line);
+      background: linear-gradient(180deg, #ffffff 0, #f8fafc 100%);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .chart-bar {
+      flex: 1;
+      min-width: 22px;
+      background: linear-gradient(180deg, var(--red), var(--pink));
+      border-radius: 10px 10px 0 0;
+      position: relative;
+      transition: .18s ease;
+    }
+
+    .chart-bar:hover { filter: brightness(.95); transform: translateY(-2px); }
+
+    .chart-bar span {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      top: -24px;
+      font-size: 11px;
+      font-weight: 900;
+      color: #334155;
+      white-space: nowrap;
+    }
+
+    .chart-labels {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 12px;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 11px;
+      text-align: center;
+    }
+
+    .feature-card {
+      border: 1px solid var(--line);
+      background: #f8fafc;
+      border-radius: 16px;
+      padding: 15px;
+    }
+
+    .feature-card h3 { margin: 0 0 8px; font-size: 16px; }
+    .feature-card p { margin: 0; color: var(--muted); font-size: 13px; }
+
+    .priority-card {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #fff;
+      padding: 15px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+    }
+
+    .priority-card h3 { margin: 0 0 6px; font-size: 16px; }
+    .priority-card p { margin: 0; color: var(--muted); font-size: 13px; }
+    .priority-score {
+      width: 84px;
+      min-height: 64px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      font-size: 24px;
+      font-weight: 950;
+      letter-spacing: -.04em;
+      background: #f8fafc;
+    }
+
+    .accordion { display: grid; gap: 10px; }
+    .accordion-item { background: white; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+    .accordion-button {
+      width: 100%;
+      border: 0;
+      background: #fff;
+      color: var(--ink);
+      padding: 15px 16px;
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      font-weight: 900;
+      cursor: pointer;
+      text-align: left;
+    }
+    .accordion-content { display: none; padding: 0 16px 16px; color: #475569; font-size: 14px; }
+    .accordion-item.open .accordion-content { display: block; }
+
+    .stack-map {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .stack-card {
+      border: 1px solid var(--line);
+      background: #f8fafc;
+      border-radius: 16px;
+      padding: 14px;
+    }
+    .stack-card h3 { margin: 0 0 8px; font-size: 15px; }
+    .stack-card ul { margin: 0; padding-left: 18px; color: var(--muted); font-size: 13px; }
+    .stack-card li { margin-bottom: 5px; }
+
+    .note {
+      background: linear-gradient(135deg, #eff6ff, #f5f3ff);
+      border: 1px solid #dbeafe;
+      border-radius: var(--radius);
+      padding: 18px;
+    }
+
+    .note h3 { margin: 0 0 8px; }
+    .note p { margin: 0; color: #475569; }
+
+    .footer { text-align: center; color: var(--muted); font-size: 12px; margin-top: 28px; }
+
+    @media (max-width: 1280px) {
+      .grid.kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .stack-map { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .hero-inner, .score-panel { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 920px) {
+      .toolbar, .grid.two, .grid.three, .grid.four, .grid.kpis, .stack-map { grid-template-columns: 1fr; }
+      .shell { padding: 18px 14px 40px; }
+      .hero { padding: 28px 16px; }
+      .tabs { position: relative; }
+      .bar-row, .leak-row, .funnel-step { grid-template-columns: 1fr; gap: 6px; }
+      .chart-labels { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-inner">
+      <div>
+        <div class="eyebrow">CTR Leakage Analysis · Heureka-style ecommerce · Category-level SEO</div>
+        <h1>Where Google Eats the Clicks</h1>
+        <p>
+          A single-file interactive HTML prototype for explaining why rankings can improve while organic traffic does not grow proportionally. Built for enterprise ecommerce category analysis, where Ads, Shopping modules, AI Overviews, Local packs, rich snippets and competitor SERP enhancements can all reduce classic organic CTR.
+        </p>
+      </div>
+      <div class="hero-card">
+        <strong>Core business question</strong>
+        <span>Are we losing clicks because our rankings are weak — or because the SERP itself is taking the clicks before users reach us?</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section class="toolbar card">
+      <div>
+        <label for="categorySelect">Category</label>
+        <select id="categorySelect">
+          <option value="pneu">Pneumatiky / Tires</option>
+          <option value="mobiles">Mobile phones</option>
+          <option value="laptops">Laptops</option>
+          <option value="appliances">Large appliances</option>
+        </select>
+      </div>
+      <div>
+        <label for="marketSelect">Market</label>
+        <select id="marketSelect">
+          <option value="sk">Slovakia</option>
+          <option value="cz">Czechia</option>
+          <option value="hu">Hungary</option>
+        </select>
+      </div>
+      <div>
+        <label for="deviceSelect">Device</label>
+        <select id="deviceSelect">
+          <option value="mobile">Mobile</option>
+          <option value="desktop">Desktop</option>
+          <option value="all">All devices</option>
+        </select>
+      </div>
+      <div>
+        <label for="periodSelect">Period</label>
+        <select id="periodSelect">
+          <option value="28">Last 28 days</option>
+          <option value="90">Last 90 days</option>
+          <option value="180">Last 180 days</option>
+        </select>
+      </div>
+      <div>
+        <label for="scenarioRange">SERP pressure: <span id="scenarioLabel">Base</span></label>
+        <input id="scenarioRange" type="range" min="1" max="3" value="2" />
+      </div>
+    </section>
+
+    <nav class="tabs" aria-label="Dashboard sections">
+      <button class="tab-btn active" data-tab="overview">Overview</button>
+      <button class="tab-btn" data-tab="features">SERP Feature Loss</button>
+      <button class="tab-btn" data-tab="clusters">Query Clusters</button>
+      <button class="tab-btn" data-tab="explain">Why Traffic Does Not Follow Rankings</button>
+      <button class="tab-btn" data-tab="priorities">Prioritization</button>
+      <button class="tab-btn" data-tab="metrics">Metrics & Formulas</button>
+      <button class="tab-btn" data-tab="stack">Tools & Workflow</button>
+    </nav>
+
+    <section id="overview" class="tab-panel active">
+      <div class="grid kpis">
+        <article class="card kpi"><div class="kpi-title">Total CTR Leakage</div><div class="kpi-value" id="kpiLeakage">46%</div><div class="kpi-note">Estimated share of clicks lost compared with position-based benchmark CTR.</div></article>
+        <article class="card kpi"><div class="kpi-title">Expected CTR</div><div class="kpi-value" id="kpiExpectedCtr">12.4%</div><div class="kpi-note">Benchmark CTR from current weighted average position.</div></article>
+        <article class="card kpi"><div class="kpi-title">Observed CTR</div><div class="kpi-value" id="kpiObservedCtr">6.7%</div><div class="kpi-note">Actual GSC CTR for the selected category and query universe.</div></article>
+        <article class="card kpi"><div class="kpi-title">Lost Clicks</div><div class="kpi-value" id="kpiLostClicks">82k</div><div class="kpi-note">Estimated missed clicks in the selected period.</div></article>
+        <article class="card kpi"><div class="kpi-title">Largest Click Sink</div><div class="kpi-value" id="kpiLargestSink">Ads</div><div class="kpi-note">SERP element with the highest estimated CTR loss.</div></article>
+        <article class="card kpi"><div class="kpi-title">Ranking vs Traffic Gap</div><div class="kpi-value" id="kpiGap">High</div><div class="kpi-note">Explains why ranking growth does not translate 1:1 into visits.</div></article>
+        <article class="card kpi"><div class="kpi-title">Recovery Potential</div><div class="kpi-value" id="kpiRecovery">€31k</div><div class="kpi-note">Estimated value if part of lost CTR is recovered.</div></article>
+      </div>
+
+      <div class="grid two">
+        <article class="card">
+          <div class="section-title" style="margin-top:0">
+            <div>
+              <h2>CTR Leakage Score</h2>
+              <p>The higher the leakage, the more the SERP layout reduces classic organic click capture. High leakage does not always mean SEO failure; sometimes it means the battlefield changed.</p>
+            </div>
+          </div>
+          <div class="score-panel">
+            <div class="donut" id="leakageDonut"><div class="donut-inner"><strong id="donutLeakage">46</strong><span>% lost</span></div></div>
+            <div>
+              <div class="formula-box">
+                <strong>Total CTR Leakage</strong> =<br />
+                1 − (Observed Organic CTR ÷ Expected Position-Based CTR)
+              </div>
+              <div class="formula-box">
+                <strong>Lost Clicks</strong> =<br />
+                Impressions × (Expected CTR − Observed CTR)
+              </div>
+              <div id="summaryBars"></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="section-title" style="margin-top:0">
+            <div>
+              <h2>Executive explanation</h2>
+              <p id="executiveExplanation">Organic positions improved, but SERP features are absorbing a large part of the expected click growth.</p>
+            </div>
+          </div>
+          <div id="executiveCards" class="grid" style="gap:12px"></div>
+        </article>
+      </div>
+
+      <div class="section-title">
+        <div>
+          <h2>Leakage trend</h2>
+          <p>Track whether the category is becoming more or less clickable over time. This is crucial when Google adds new features above or inside classic organic results.</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="chart" id="trendChart"></div>
+        <div class="chart-labels"><span>M-5</span><span>M-4</span><span>M-3</span><span>M-2</span><span>M-1</span><span>Current</span></div>
+      </div>
+    </section>
+
+    <section id="features" class="tab-panel">
+      <div class="section-title">
+        <div>
+          <h2>SERP feature CTR loss model</h2>
+          <p>This block estimates where clicks are being diverted. It helps explain the uncomfortable but common reality: better rankings do not automatically mean proportional traffic growth.</p>
+        </div>
+      </div>
+
+      <div class="grid two">
+        <article class="card">
+          <h2>Estimated CTR loss by SERP feature</h2>
+          <div class="formula-box">Feature CTR Loss = Feature Presence × Feature Click Diversion Weight × Query Demand Weight × Device Weight</div>
+          <div id="featureLossRows"></div>
+        </article>
+        <article class="card">
+          <h2>Feature loss chart</h2>
+          <div class="chart" id="featureChart"></div>
+          <div class="chart-labels"><span>Ads</span><span>Shopping</span><span>AI</span><span>Local</span><span>Rich</span><span>Other</span></div>
+        </article>
+      </div>
+
+      <div class="section-title">
+        <div>
+          <h2>Feature diagnosis table</h2>
+          <p>Use this table to convert leakage into specific SEO, PPC, feed, content or product actions.</p>
+        </div>
+      </div>
+      <div class="card">
+        <table>
+          <thead><tr><th>SERP Feature</th><th>Estimated CTR Loss</th><th>Why it steals clicks</th><th>Primary response</th><th>Owner</th></tr></thead>
+          <tbody id="featureTable"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="clusters" class="tab-panel">
+      <div class="section-title">
+        <div>
+          <h2>CTR leakage by query cluster</h2>
+          <p>CTR leakage must be measured by query type. Transactional queries, comparison queries and informational queries are affected by different SERP features.</p>
+        </div>
+      </div>
+      <div class="grid two">
+        <article class="card">
+          <h2>Cluster leakage table</h2>
+          <div class="formula-box">Cluster Lost Clicks = Cluster Impressions × (Expected CTR by Avg Position − Observed CTR)</div>
+          <table>
+            <thead><tr><th>Query cluster</th><th>Intent</th><th>Avg position</th><th>Expected CTR</th><th>Observed CTR</th><th>Leakage</th><th>Main sink</th></tr></thead>
+            <tbody id="clusterTable"></tbody>
+          </table>
+        </article>
+        <article class="card">
+          <h2>Cluster opportunity ranking</h2>
+          <div class="formula-box">Recovery Opportunity = Lost Clicks × Conversion Proxy × Business Value Weight × Confidence</div>
+          <div id="clusterCards" class="grid" style="gap:12px"></div>
+        </article>
+      </div>
+    </section>
+
+    <section id="explain" class="tab-panel">
+      <div class="section-title">
+        <div>
+          <h2>Why rankings grow but traffic does not grow proportionally</h2>
+          <p>This section is designed for stakeholder communication. It translates CTR leakage into a clear business explanation.</p>
+        </div>
+      </div>
+
+      <div class="grid three">
+        <div class="note"><h3>1. Ranking position is not the full SERP</h3><p>A position-3 result below ads, shopping and AI blocks is not equal to an old-school position-3 result at the top of the page.</p></div>
+        <div class="note"><h3>2. Google can satisfy part of the intent directly</h3><p>Product modules, AI answers, snippets and comparison elements can answer or redirect users before they click a classic organic result.</p></div>
+        <div class="note"><h3>3. CTR benchmarks become unstable</h3><p>Generic CTR curves are useful, but they must be adjusted by SERP features, device, brand strength and query intent.</p></div>
+      </div>
+
+      <div class="section-title">
+        <div><h2>Traffic gap decomposition</h2><p>Separate pure ranking gains from SERP layout losses and snippet-level losses.</p></div>
+      </div>
+      <div class="card">
+        <table>
+          <thead><tr><th>Layer</th><th>Metric</th><th>Interpretation</th><th>What to check</th></tr></thead>
+          <tbody>
+            <tr><td class="metric-name">Ranking layer</td><td>Avg position, Top 3 share, Top 10 share</td><td>Shows whether organic ranking actually improved.</td><td>Rank tracker and GSC position by query cluster.</td></tr>
+            <tr><td class="metric-name">SERP layout layer</td><td>Ads, Shopping, AI, Local, PAA, snippets</td><td>Shows whether the result is visually pushed down or surrounded by click sinks.</td><td>SERP feature tracking by query and device.</td></tr>
+            <tr><td class="metric-name">Snippet layer</td><td>Title CTR, description quality, rich result ownership</td><td>Shows whether your visible result earns the click when it appears.</td><td>GSC CTR outliers, snippet tests, competitor snippets.</td></tr>
+            <tr><td class="metric-name">Demand layer</td><td>Impressions, seasonality, market trend</td><td>Shows whether the search market expanded or contracted.</td><td>GSC impressions, Google Trends, seasonality index.</td></tr>
+            <tr><td class="metric-name">Business layer</td><td>Product clicks, conversion proxy, revenue</td><td>Shows whether recovered clicks matter commercially.</td><td>GA4, internal BI, product feed and category revenue data.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="priorities" class="tab-panel">
+      <div class="section-title">
+        <div>
+          <h2>Prioritization model</h2>
+          <p>Not every leakage source is fixable by SEO. The dashboard should separate recoverable leakage from structural SERP leakage.</p>
+        </div>
+      </div>
+      <div class="grid two">
+        <article class="card">
+          <h2>CTR recovery roadmap</h2>
+          <div class="formula-box">Priority Score = Recoverable Lost Clicks × Business Value × Confidence × Speed ÷ Effort</div>
+          <table>
+            <thead><tr><th>Initiative</th><th>Target leakage</th><th>Recoverability</th><th>Effort</th><th>Priority</th><th>Owner</th></tr></thead>
+            <tbody id="roadmapTable"></tbody>
+          </table>
+        </article>
+        <article class="card">
+          <h2>Fixability matrix</h2>
+          <div id="fixabilityCards" class="grid" style="gap:12px"></div>
+        </article>
+      </div>
+
+      <div class="section-title">
+        <div><h2>Recommended interpretation rules</h2><p>Use these rules to avoid wrong conclusions in category SEO reporting.</p></div>
+      </div>
+      <div class="grid four">
+        <div class="feature-card"><h3>High ranking + high leakage</h3><p>SEO is not failing; the SERP is crowded. Focus on rich results, snippets, feeds and PPC/SEO coordination.</p></div>
+        <div class="feature-card"><h3>Low ranking + high leakage</h3><p>Double problem. First improve rankings for commercially viable clusters, then recover CTR.</p></div>
+        <div class="feature-card"><h3>High ranking + low leakage</h3><p>Protect the category. This is where ranking loss will hurt traffic quickly.</p></div>
+        <div class="feature-card"><h3>Low ranking + low leakage</h3><p>Classic SEO opportunity. SERP is still clickable; improve content, links and technical health.</p></div>
+      </div>
+    </section>
+
+    <section id="metrics" class="tab-panel">
+      <div class="section-title">
+        <div>
+          <h2>Metric dictionary: meanings, formulas and tools</h2>
+          <p>CTR leakage is an estimated model. It should be validated with GSC trends, rank tracking, SERP screenshots and controlled before/after tests.</p>
+        </div>
+      </div>
+      <div class="accordion" id="metricAccordion"></div>
+    </section>
+
+    <section id="stack" class="tab-panel">
+      <div class="section-title">
+        <div>
+          <h2>Tools and workflow</h2>
+          <p>For enterprise ecommerce, CTR leakage should be modeled at keyword-cluster level and joined with GSC, rank tracking, SERP features and business data.</p>
+        </div>
+      </div>
+
+      <div class="stack-map">
+        <div class="stack-card"><h3>Search performance</h3><ul><li>Google Search Console API</li><li>GSC bulk export</li><li>URL/query/device data</li><li>CTR anomaly detection</li></ul></div>
+        <div class="stack-card"><h3>Ranking data</h3><ul><li>Semrush / Ahrefs / Sistrix</li><li>Daily rank tracker</li><li>Top 3 / Top 10 share</li><li>Competitor positions</li></ul></div>
+        <div class="stack-card"><h3>SERP features</h3><ul><li>Ads presence</li><li>Shopping carousel</li><li>AI Overviews</li><li>Local pack / snippets / PAA</li></ul></div>
+        <div class="stack-card"><h3>Business value</h3><ul><li>GA4 events</li><li>Internal BI</li><li>Product clicks</li><li>Revenue or lead value</li></ul></div>
+        <div class="stack-card"><h3>Warehouse</h3><ul><li>BigQuery</li><li>Keyword cluster tables</li><li>CTR benchmark tables</li><li>Feature weight model</li></ul></div>
+        <div class="stack-card"><h3>Visualization</h3><ul><li>Looker Studio</li><li>Power BI</li><li>Python notebooks</li><li>Automated alerts</li></ul></div>
+      </div>
+
+      <div class="section-title"><div><h2>Step-by-step workflow</h2></div></div>
+      <div class="grid four">
+        <div class="feature-card"><h3>1. Define query universe</h3><p>Group GSC and rank-tracker keywords into category-specific clusters and intent types.</p></div>
+        <div class="feature-card"><h3>2. Add CTR benchmarks</h3><p>Map expected CTR by position, device, brand/non-brand and query intent.</p></div>
+        <div class="feature-card"><h3>3. Capture SERP features</h3><p>Track Ads, Shopping, AI, Local, snippets and competitor enhancements for each keyword.</p></div>
+        <div class="feature-card"><h3>4. Calculate leakage</h3><p>Compare expected clicks with observed GSC clicks and allocate loss across SERP features.</p></div>
+        <div class="feature-card"><h3>5. Estimate recovery</h3><p>Separate structural losses from recoverable losses: snippets, rich results, rankings, feeds and internal links.</p></div>
+        <div class="feature-card"><h3>6. Prioritize actions</h3><p>Score each initiative by lost clicks, business value, confidence, speed and effort.</p></div>
+        <div class="feature-card"><h3>7. Validate changes</h3><p>Measure before/after CTR by stable query clusters, not just total organic traffic.</p></div>
+        <div class="feature-card"><h3>8. Report context</h3><p>Explain traffic changes as ranking movement plus SERP layout movement plus demand movement.</p></div>
+      </div>
+
+      <div class="section-title"><div><h2>Core warehouse tables</h2></div></div>
+      <div class="card">
+        <table>
+          <thead><tr><th>Table</th><th>Grain</th><th>Core fields</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td class="metric-name">dim_keyword_cluster</td><td>1 row per cluster</td><td>category_id, cluster_id, intent, demand, seasonality, commercial_weight</td><td>Defines the query universe.</td></tr>
+            <tr><td class="metric-name">gsc_query_daily</td><td>query × URL × device × date</td><td>impressions, clicks, ctr, avg_position, country</td><td>Observed search performance.</td></tr>
+            <tr><td class="metric-name">rank_serp_daily</td><td>keyword × device × date</td><td>position, URL, competitor, SERP features, pixel depth</td><td>Ranking and SERP layout context.</td></tr>
+            <tr><td class="metric-name">ctr_benchmark</td><td>position × device × intent</td><td>expected_ctr, brand_modifier, market_modifier</td><td>Expected CTR baseline.</td></tr>
+            <tr><td class="metric-name">feature_weights</td><td>SERP feature × device × intent</td><td>presence_weight, click_diversion_weight, confidence</td><td>Allocates leakage across SERP features.</td></tr>
+            <tr><td class="metric-name">business_value</td><td>category × date</td><td>conversion_proxy, revenue, lead_value, margin_weight</td><td>Converts lost clicks into business impact.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="footer">Interactive prototype with mock data · Replace demo values with GSC, rank tracker, SERP feature, BI and BigQuery sources in production.</div>
+  </main>
+
+  <script>
+    const datasets = {
+      pneu: {
+        category: 'Pneumatiky / Tires',
+        leakage: 46,
+        expectedCtr: 12.4,
+        observedCtr: 6.7,
+        impressions: 1440000,
+        lostClicks: 82100,
+        largestSink: 'Google Ads',
+        gap: 'High',
+        recovery: 31000,
+        explanation: 'Tires has strong commercial intent, but Ads, Shopping modules and seasonal SERP competition absorb a large part of the expected click growth. Ranking gains are real, but the visible organic surface is compressed.',
+        summary: [['Expected CTR', 12.4, 'Benchmark based on weighted average ranking position.'], ['Observed CTR', 6.7, 'Actual category CTR from GSC.'], ['CTR Leakage', 46, 'Estimated lost organic click share.'], ['Recoverable leakage', 21, 'Part of leakage that SEO/PPC/product teams can realistically influence.']],
+        trend: [31, 34, 39, 44, 43, 46],
+        features: [
+          ['Google Ads', 28, 'Ads push organic listings down and capture high-intent commercial clicks.', 'Coordinate SEO/PPC query strategy; defend high-margin queries; use PPC data for SEO titles and landing pages.', 'SEO + PPC'],
+          ['Shopping carousel', 17, 'Product modules satisfy comparison intent before users reach organic results.', 'Improve product feed quality, pricing data, merchant signals and category/product structured data.', 'Feed + SEO + Product'],
+          ['AI Overviews', 11, 'AI-like answers can summarize buying advice and reduce clicks on guide/comparison queries.', 'Build concise comparison blocks, pros/cons, product attributes, data-backed guides and citation-ready content.', 'SEO + Content'],
+          ['Local pack', 4, 'Local results are less dominant for tires, but can affect service and local-installation queries.', 'Separate local-service queries from pure ecommerce category queries.', 'SEO + Local'],
+          ['Competitor rich snippets', 6, 'Competitors win visual enhancements, ratings or richer snippets that attract clicks.', 'Improve snippet templates, schema validity and review/comparison presentation.', 'SEO + Engineering'],
+          ['Other SERP friction', 3, 'PAA, images, videos or brand results fragment click behavior.', 'Monitor by cluster and only act where business value is meaningful.', 'SEO']
+        ],
+        clusters: [
+          ['summer tyres', 'Transactional', 5.7, 13.9, 6.9, 50, 'Google Ads', 21400, 91],
+          ['winter tyres', 'Transactional', 6.4, 12.2, 5.8, 52, 'Shopping carousel', 18800, 88],
+          ['tyre tests and reviews', 'Commercial investigation', 7.8, 9.4, 4.9, 48, 'AI Overviews', 9600, 78],
+          ['brand + tyre size', 'Transactional', 8.9, 8.1, 4.7, 42, 'Competitor snippets', 8200, 75]
+        ],
+        roadmap: [
+          ['Coordinate SEO/PPC on expensive high-intent tyre queries', 'Google Ads', 'Medium', 'Low', 88, 'SEO + PPC'],
+          ['Improve product feed and category/product data quality', 'Shopping carousel', 'High', 'Medium', 84, 'Feed + Product + SEO'],
+          ['Create citation-ready tyre guide and comparison modules', 'AI Overviews', 'Medium', 'Medium', 76, 'SEO + Content'],
+          ['Upgrade title/meta snippets for Top 4–10 clusters', 'Competitor rich snippets', 'High', 'Low', 74, 'SEO'],
+          ['Build selective landing pages for brand + size combinations', 'Ranking + CTR', 'Medium', 'High', 69, 'SEO + Engineering']
+        ],
+        fixability: [['Google Ads leakage', 'Partly recoverable', 'SEO cannot remove ads, but PPC/SEO coordination can reduce waste and improve total search value.'], ['Shopping leakage', 'Partly recoverable', 'Feed quality and product data can help regain visibility inside product-oriented modules.'], ['AI leakage', 'Uncertain but measurable', 'Aim for citations and content formats that AI/search systems can reuse.'], ['Snippet leakage', 'Highly recoverable', 'Better titles, descriptions, schema and rich snippets can directly improve CTR.']]
+      },
+      mobiles: {
+        category: 'Mobile phones', leakage: 34, expectedCtr: 14.8, observedCtr: 9.8, impressions: 2120000, lostClicks: 106000, largestSink: 'Shopping', gap: 'Medium', recovery: 37000,
+        explanation: 'Mobile phones has stronger organic visibility than most categories, but product modules, AI/specification answers and manufacturer results take a meaningful part of the click opportunity.',
+        summary: [['Expected CTR', 14.8, 'Benchmark based on strong average positions.'], ['Observed CTR', 9.8, 'Actual category CTR from GSC.'], ['CTR Leakage', 34, 'Moderate-to-high lost click share.'], ['Recoverable leakage', 18, 'Mainly snippet, feature and product-data recovery.']],
+        trend: [28, 30, 33, 35, 32, 34],
+        features: [
+          ['Google Ads', 18, 'Ads are common, but organic results still retain meaningful clickability.', 'Coordinate PPC/SEO around launches and high-margin models.', 'SEO + PPC'],
+          ['Shopping carousel', 21, 'Product modules capture price/model comparison clicks.', 'Improve product feed completeness, price freshness and structured product data.', 'Feed + Product'],
+          ['AI Overviews', 13, 'AI/spec answers affect comparison and specs queries.', 'Add structured specs, comparison tables and concise answers.', 'SEO + Content'],
+          ['Local pack', 2, 'Limited impact except repair/store queries.', 'Exclude local-intent queries from pure ecommerce CTR benchmarks.', 'SEO'],
+          ['Competitor rich snippets', 8, 'Publishers and manufacturers attract clicks with rich snippets and recognisable brands.', 'Improve snippets, review sections and comparison format.', 'SEO + Content'],
+          ['Other SERP friction', 5, 'Videos, PAA and images split attention.', 'Target PAA and visual/spec content selectively.', 'SEO']
+        ],
+        clusters: [
+          ['best smartphones', 'Commercial investigation', 4.2, 18.1, 10.7, 41, 'AI Overviews', 24200, 82],
+          ['phone price', 'Transactional', 3.8, 19.2, 13.1, 32, 'Shopping carousel', 31600, 86],
+          ['brand + model', 'Transactional', 5.1, 14.6, 10.2, 30, 'Manufacturer results', 18400, 72],
+          ['phone comparison', 'Commercial investigation', 6.2, 12.4, 7.1, 43, 'Competitor snippets', 15800, 78]
+        ],
+        roadmap: [
+          ['Improve product feed completeness for model/price queries', 'Shopping carousel', 'High', 'Medium', 86, 'Feed + Product'],
+          ['Build structured comparison tables for best/comparison queries', 'AI Overviews', 'Medium', 'Medium', 80, 'SEO + Content'],
+          ['Refresh snippets for model and price pages', 'Competitor rich snippets', 'High', 'Low', 78, 'SEO'],
+          ['Add launch-cycle SEO monitoring', 'Demand + SERP volatility', 'Medium', 'Low', 68, 'SEO + BI'],
+          ['Improve review/rating presentation', 'Rich snippets', 'Medium', 'Medium', 63, 'SEO + Engineering']
+        ],
+        fixability: [['Shopping leakage', 'Partly recoverable', 'Product feed and structured data are the main levers.'], ['AI/spec leakage', 'Partly recoverable', 'Structured specs and comparison content can increase citation-like visibility.'], ['Manufacturer leakage', 'Low recoverability', 'Some brand SERPs naturally favor manufacturers.'], ['Snippet leakage', 'Highly recoverable', 'Title, meta and rich result improvements can move CTR.']]
+      },
+      laptops: {
+        category: 'Laptops', leakage: 39, expectedCtr: 13.6, observedCtr: 8.3, impressions: 1680000, lostClicks: 89040, largestSink: 'AI / snippets', gap: 'High', recovery: 29000,
+        explanation: 'Laptops are heavily affected by comparison and specification SERPs. AI answers, PAA, product modules and review publishers reduce the CTR of classic category results.',
+        summary: [['Expected CTR', 13.6, 'Benchmark from ranking position.'], ['Observed CTR', 8.3, 'Actual GSC CTR.'], ['CTR Leakage', 39, 'High lost click share.'], ['Recoverable leakage', 19, 'Mainly snippets, comparison content and feed improvements.']],
+        trend: [29, 31, 34, 37, 38, 39],
+        features: [
+          ['Google Ads', 19, 'Paid listings capture transactional laptop clicks.', 'Use PPC query data to guide SEO priorities and landing page messaging.', 'SEO + PPC'],
+          ['Shopping carousel', 18, 'Shopping modules dominate price/model comparison searches.', 'Improve product feed, availability, price and product attributes.', 'Feed + Product'],
+          ['AI Overviews', 15, 'AI/spec answers reduce clicks for “best laptop” and “how to choose” queries.', 'Create concise buying logic, comparison tables and expert-like answer blocks.', 'SEO + Content'],
+          ['Local pack', 1, 'Low impact for pure ecommerce laptop queries.', 'Exclude local queries from ecommerce CTR benchmarks.', 'SEO'],
+          ['Competitor rich snippets', 9, 'Publishers win rich snippets and review-led results.', 'Improve review snippets, ratings, title templates and guide content.', 'SEO + Content'],
+          ['Other SERP friction', 6, 'Videos, PAA and images split attention.', 'Add FAQ, specs and visual comparison content where relevant.', 'SEO']
+        ],
+        clusters: [
+          ['best laptops', 'Commercial investigation', 5.9, 13.2, 6.9, 48, 'AI Overviews', 19800, 84],
+          ['gaming laptops', 'Transactional', 6.6, 11.8, 7.0, 41, 'Shopping carousel', 15100, 76],
+          ['laptop price', 'Transactional', 4.9, 15.1, 9.8, 35, 'Google Ads', 22400, 79],
+          ['laptop comparison', 'Commercial investigation', 7.2, 10.5, 5.7, 46, 'Competitor snippets', 12100, 73]
+        ],
+        roadmap: [
+          ['Create laptop buying guide modules by use case', 'AI Overviews', 'Medium', 'Medium', 83, 'SEO + Content'],
+          ['Improve gaming laptop product attributes and feed', 'Shopping carousel', 'Medium', 'Medium', 77, 'Feed + Product'],
+          ['Rewrite price and comparison snippets', 'Google Ads + rich snippets', 'High', 'Low', 75, 'SEO'],
+          ['Add comparison-table schema/content QA', 'AI + snippets', 'Medium', 'Medium', 70, 'SEO + Engineering'],
+          ['Build internal links from guides to commercial pages', 'Ranking + CTR', 'Medium', 'Low', 67, 'SEO']
+        ],
+        fixability: [['AI/spec leakage', 'Partly recoverable', 'Guide quality and comparison structure matter.'], ['Shopping leakage', 'Partly recoverable', 'Feed and product data improvements are required.'], ['Publisher leakage', 'Medium recoverability', 'Review-style content can compete, but authority gap matters.'], ['Snippet leakage', 'Highly recoverable', 'Title/meta and rich result work can improve visible appeal.']]
+      },
+      appliances: {
+        category: 'Large appliances', leakage: 27, expectedCtr: 9.8, observedCtr: 7.2, impressions: 820000, lostClicks: 21320, largestSink: 'Ranking loss', gap: 'Medium', recovery: 9000,
+        explanation: 'Large appliances have lower SERP feature pressure than electronics categories. Traffic underperformance is caused more by weak ranking distribution and content gaps than by SERP click sinks.',
+        summary: [['Expected CTR', 9.8, 'Benchmark from weaker average position.'], ['Observed CTR', 7.2, 'Actual GSC CTR.'], ['CTR Leakage', 27, 'Moderate leakage.'], ['Recoverable leakage', 14, 'Mostly snippets and content/ranking improvement.']],
+        trend: [22, 23, 25, 26, 28, 27],
+        features: [
+          ['Google Ads', 12, 'Ads are present but less aggressive than in electronics categories.', 'Use PPC selectively for high-margin appliance clusters.', 'SEO + PPC'],
+          ['Shopping carousel', 10, 'Product modules reduce clicks on price-led queries.', 'Improve product data and category pricing modules.', 'Feed + Product'],
+          ['AI Overviews', 5, 'AI impact is still limited; guide queries may be affected.', 'Create useful buying guides but do not over-prioritize AI response work.', 'SEO + Content'],
+          ['Local pack', 3, 'May appear for local store/service queries.', 'Segment local/store queries from ecommerce category analysis.', 'SEO + Local'],
+          ['Competitor rich snippets', 5, 'Competitors sometimes win better snippets for reviews and guides.', 'Improve snippets and category guide modules.', 'SEO'],
+          ['Other SERP friction', 2, 'Limited additional friction.', 'Monitor, but focus on ranking and content coverage first.', 'SEO']
+        ],
+        clusters: [
+          ['best washing machine', 'Commercial investigation', 12.8, 6.4, 4.2, 34, 'Competitor snippets', 5200, 68],
+          ['fridge price', 'Transactional', 8.4, 9.1, 6.6, 27, 'Shopping carousel', 6100, 64],
+          ['dishwasher comparison', 'Commercial investigation', 14.2, 5.9, 3.8, 36, 'AI Overviews', 3500, 59],
+          ['energy class appliances', 'Informational-commercial', 11.6, 6.9, 5.1, 26, 'PAA / snippets', 2800, 53]
+        ],
+        roadmap: [
+          ['Improve rankings for Top 11–20 appliance clusters', 'Ranking gap', 'High', 'Medium', 79, 'SEO + Content'],
+          ['Create appliance buying guide modules', 'AI/snippets', 'Medium', 'Medium', 71, 'SEO + Content'],
+          ['Improve category title/meta patterns', 'Snippet leakage', 'High', 'Low', 70, 'SEO'],
+          ['Improve product data for price-led queries', 'Shopping carousel', 'Medium', 'Medium', 62, 'Feed + Product'],
+          ['Segment local-intent queries from ecommerce reporting', 'Local pack', 'High', 'Low', 58, 'SEO + BI']
+        ],
+        fixability: [['Ranking leakage', 'Highly recoverable', 'Classic SEO improvements can still move traffic here.'], ['Shopping leakage', 'Partly recoverable', 'Feed and product data can help.'], ['AI leakage', 'Low priority', 'Monitor but do not let AI panic steal the roadmap.'], ['Snippet leakage', 'Highly recoverable', 'Title/meta and guide modules are practical fixes.']]
+      }
+    };
+
+    const metricDocs = [
+      ['CTR Leakage', 'Estimated percentage of clicks lost compared with the clicks expected from the current ranking position.', 'CTR Leakage = 1 − (Observed Organic CTR ÷ Expected Position-Based CTR)', 'GSC, rank tracker, CTR benchmark table, BigQuery.', 'Use to explain why ranking growth may not produce proportional traffic growth.'],
+      ['Expected CTR', 'The benchmark CTR a URL or query cluster should receive based on ranking position, device, intent and brand/non-brand status.', 'Expected CTR = Benchmark CTR(position, device, intent) × SERP Availability Weight', 'CTR benchmark datasets, GSC historical data, AWR/Sistrix/Semrush studies, internal baselines.', 'Do not use a generic CTR curve blindly. Adjust it by SERP layout and query type.'],
+      ['Observed CTR', 'The real CTR from Google Search Console for the selected category/query cluster.', 'Observed CTR = Clicks ÷ Impressions × 100', 'Google Search Console API or bulk export.', 'Use stable query clusters and compare similar periods to avoid seasonality noise.'],
+      ['Lost Clicks', 'Estimated number of clicks that were not captured because observed CTR underperformed the expected CTR.', 'Lost Clicks = Impressions × (Expected CTR − Observed CTR)', 'GSC, BigQuery, CTR benchmark table.', 'Translate CTR leakage into click and business value to make the issue understandable.'],
+      ['SERP Feature CTR Loss', 'Estimated click loss attributed to a specific SERP feature such as Ads, Shopping, AI Overviews or Local pack.', 'Feature CTR Loss = Feature Presence × Feature Click Diversion Weight × Query Demand Weight × Device Weight', 'Rank tracker SERP feature exports, SERP APIs, manual SERP checks, BigQuery.', 'Treat this as a model, not absolute truth. Validate against observed CTR changes.'],
+      ['Recoverable Leakage', 'The part of CTR leakage that can realistically be influenced through SEO, PPC, feed, snippet, content or product changes.', 'Recoverable Leakage = Total Leakage × Recoverability Weight × Confidence', 'SEO analysis, PPC data, feed diagnostics, snippet tests, business input.', 'Separate structural SERP loss from practical optimization opportunities.'],
+      ['Ranking vs Traffic Gap', 'Measures whether ranking improvement produced less traffic growth than expected.', 'Gap = Expected Click Growth from Ranking Change − Actual Click Growth', 'Rank tracker, GSC, BigQuery, SERP feature tracking.', 'Use this metric in stakeholder reporting to avoid the simplistic “rankings up = traffic must be up” assumption.'],
+      ['Recovery Potential Value', 'Estimated business value of recovering a portion of lost clicks.', 'Recovery Value = Recoverable Lost Clicks × Conversion Proxy × Average Value × Confidence', 'GA4, internal BI, product click data, lead/revenue value.', 'Prioritize CTR work where lost clicks have commercial value.']
+    ];
+
+    function getData() { return datasets[document.getElementById('categorySelect').value]; }
+
+    function scenarioMultiplier() {
+      const value = Number(document.getElementById('scenarioRange').value);
+      if (value === 1) return 0.85;
+      if (value === 3) return 1.15;
+      return 1;
+    }
+
+    function adjusted(value) {
+      return Math.round(value * scenarioMultiplier());
+    }
+
+    function adjustedFloat(value) {
+      return (value * scenarioMultiplier()).toFixed(1);
+    }
+
+    function money(value) { return '€' + Math.round(value / 1000) + 'k'; }
+    function clicks(value) { return value >= 1000 ? Math.round(value / 1000) + 'k' : String(value); }
+    function riskClass(value) { if (value >= 40) return 'bad'; if (value >= 25) return 'warn'; return 'good'; }
+    function priorityClass(value) { if (value >= 80) return 'good'; if (value >= 65) return 'warn'; return 'info'; }
+
+    function renderChart(id, values, labels, maxValue = null) {
+      const max = maxValue || Math.max(...values, 50);
+      document.getElementById(id).innerHTML = values.map((v, i) => `
+        <div class="chart-bar" style="height:${Math.max(8, (v / max) * 245)}px"><span>${labels ? labels[i] + ': ' : ''}${v}%</span></div>
+      `).join('');
+    }
+
+    function render() {
+      const d = getData();
+      const leak = adjusted(d.leakage);
+      const lostClicks = Math.round(d.lostClicks * scenarioMultiplier());
+      const recovery = Math.round(d.recovery * scenarioMultiplier());
+
+      document.getElementById('kpiLeakage').textContent = leak + '%';
+      document.getElementById('kpiExpectedCtr').textContent = adjustedFloat(d.expectedCtr) + '%';
+      document.getElementById('kpiObservedCtr').textContent = d.observedCtr.toFixed(1) + '%';
+      document.getElementById('kpiLostClicks').textContent = clicks(lostClicks);
+      document.getElementById('kpiLargestSink').textContent = d.largestSink;
+      document.getElementById('kpiGap').textContent = d.gap;
+      document.getElementById('kpiRecovery').textContent = money(recovery);
+      document.getElementById('donutLeakage').textContent = leak;
+      document.getElementById('executiveExplanation').textContent = d.explanation;
+
+      const deg = Math.round(leak * 3.6);
+      let color = 'var(--green)';
+      if (leak >= 25) color = 'var(--amber)';
+      if (leak >= 40) color = 'var(--red)';
+      document.getElementById('leakageDonut').style.background = `conic-gradient(${color} 0deg, ${color} ${deg}deg, #e2e8f0 ${deg}deg, #e2e8f0 360deg)`;
+
+      document.getElementById('summaryBars').innerHTML = d.summary.map(([name, value, desc]) => {
+        const display = name.includes('CTR') || name.includes('leakage') ? adjustedFloat(value) : value;
+        const width = Math.min(100, Number(display));
+        const fillClass = name.includes('Leakage') ? 'loss-fill' : 'bar-fill';
+        return `<div class="bar-row"><div>${name}</div><div><div class="bar-bg"><div class="bar-fill ${fillClass}" style="width:${width}%"></div></div><div class="small" style="margin-top:6px">${desc}</div></div><div>${display}%</div></div>`;
+      }).join('');
+
+      const topFeatures = d.features.slice(0,3);
+      document.getElementById('executiveCards').innerHTML = topFeatures.map(([name, loss, why]) => `
+        <div class="priority-card"><div><h3>${name}</h3><p>${why}</p></div><div class="priority-score ${riskClass(adjusted(loss))}">-${adjusted(loss)}%</div></div>
+      `).join('');
+
+      renderChart('trendChart', d.trend.map(adjusted), null, 60);
+
+      document.getElementById('featureLossRows').innerHTML = d.features.map(([name, loss, why]) => `
+        <div class="leak-row"><div class="metric-name">${name}</div><div><div class="bar-bg"><div class="bar-fill loss-fill" style="width:${Math.min(100, adjusted(loss) * 2.5)}%"></div></div><div class="small" style="margin-top:6px">${why}</div></div><div>-${adjusted(loss)}%</div></div>
+      `).join('');
+
+      renderChart('featureChart', d.features.map(f => adjusted(f[1])), ['Ads','Shop','AI','Local','Rich','Other'], 35);
+
+      document.getElementById('featureTable').innerHTML = d.features.map(([name, loss, why, response, owner]) => `
+        <tr><td class="metric-name">${name}</td><td><span class="status-pill ${riskClass(adjusted(loss))}"><span class="dot"></span>-${adjusted(loss)}%</span></td><td>${why}</td><td>${response}</td><td>${owner}</td></tr>
+      `).join('');
+
+      document.getElementById('clusterTable').innerHTML = d.clusters.map(([cluster, intent, pos, expected, observed, leakage, sink]) => `
+        <tr><td class="metric-name">${cluster}</td><td>${intent}</td><td>${pos}</td><td>${adjustedFloat(expected)}%</td><td>${observed}%</td><td><span class="status-pill ${riskClass(adjusted(leakage))}"><span class="dot"></span>${adjusted(leakage)}%</span></td><td>${sink}</td></tr>
+      `).join('');
+
+      document.getElementById('clusterCards').innerHTML = d.clusters.map(([cluster, intent, pos, expected, observed, leakage, sink, lost, priority]) => `
+        <div class="priority-card"><div><h3>${cluster}</h3><p>${intent}. Main click sink: ${sink}. Estimated lost clicks: ${clicks(Math.round(lost * scenarioMultiplier()))}.</p></div><div class="priority-score ${priorityClass(priority)}">${priority}</div></div>
+      `).join('');
+
+      document.getElementById('roadmapTable').innerHTML = d.roadmap.map(([initiative, target, recoverability, effort, priority, owner]) => `
+        <tr><td class="metric-name">${initiative}</td><td>${target}</td><td>${recoverability}</td><td>${effort}</td><td><span class="status-pill ${priorityClass(priority)}"><span class="dot"></span>${priority}</span></td><td>${owner}</td></tr>
+      `).join('');
+
+      document.getElementById('fixabilityCards').innerHTML = d.fixability.map(([name, level, desc]) => `
+        <div class="priority-card"><div><h3>${name}</h3><p>${desc}</p></div><div><span class="status-pill ${level.includes('Highly') ? 'good' : level.includes('Low') ? 'bad' : 'warn'}"><span class="dot"></span>${level}</span></div></div>
+      `).join('');
+    }
+
+    function renderMetrics() {
+      document.getElementById('metricAccordion').innerHTML = metricDocs.map(([name, meaning, formula, tools, rec], index) => `
+        <div class="accordion-item ${index === 0 ? 'open' : ''}">
+          <button class="accordion-button" type="button"><span>${name}</span><span>+</span></button>
+          <div class="accordion-content">
+            <p><strong>Meaning:</strong> ${meaning}</p>
+            <div class="formula-box">${formula}</div>
+            <p><strong>Tools:</strong> ${tools}</p>
+            <p><strong>Recommendation:</strong> ${rec}</p>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.tab).classList.add('active');
+      });
+    });
+
+    document.addEventListener('click', e => {
+      const btn = e.target.closest('.accordion-button');
+      if (!btn) return;
+      btn.closest('.accordion-item').classList.toggle('open');
+    });
+
+    ['categorySelect', 'marketSelect', 'deviceSelect', 'periodSelect'].forEach(id => document.getElementById(id).addEventListener('change', render));
+    document.getElementById('scenarioRange').addEventListener('input', e => {
+      document.getElementById('scenarioLabel').textContent = {1:'Low',2:'Base',3:'High'}[e.target.value];
+      render();
+    });
+
+    renderMetrics();
+    render();
+  </script>
+</body>
+</html>

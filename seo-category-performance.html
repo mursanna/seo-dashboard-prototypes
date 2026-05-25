@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="robots" content="noindex, nofollow">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SEO Category Performance Dashboard</title>
+  <style>
+    :root {
+      --ink: #0f172a;
+      --muted: #64748b;
+      --soft: #f8fafc;
+      --soft2: #f1f5f9;
+      --line: #e2e8f0;
+      --white: #ffffff;
+      --navy: #020617;
+      --blue: #2563eb;
+      --cyan: #0891b2;
+      --violet: #7c3aed;
+      --green: #16a34a;
+      --amber: #f59e0b;
+      --red: #dc2626;
+      --radius: 20px;
+      --shadow: 0 18px 44px rgba(15, 23, 42, 0.11);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--soft);
+      color: var(--ink);
+      line-height: 1.45;
+    }
+
+    .hero {
+      background:
+        radial-gradient(circle at 15% 20%, rgba(59,130,246,.28) 0, transparent 30%),
+        radial-gradient(circle at 82% 10%, rgba(124,58,237,.24) 0, transparent 28%),
+        linear-gradient(135deg, #020617 0%, #0f172a 52%, #111827 100%);
+      color: white;
+      padding: 34px 26px 28px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+
+    .hero-inner {
+      max-width: 1480px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(320px, .6fr);
+      gap: 26px;
+      align-items: end;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid rgba(255,255,255,.17);
+      background: rgba(255,255,255,.06);
+      color: #cbd5e1;
+      border-radius: 999px;
+      padding: 7px 12px;
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    h1 {
+      margin: 16px 0 10px;
+      font-size: clamp(34px, 4.3vw, 62px);
+      line-height: 1.02;
+      letter-spacing: -0.055em;
+    }
+
+    .hero p {
+      margin: 0;
+      color: #cbd5e1;
+      max-width: 960px;
+      font-size: 16px;
+    }
+
+    .hero-card {
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.08);
+      border-radius: var(--radius);
+      padding: 18px;
+      box-shadow: 0 16px 44px rgba(0,0,0,.26);
+    }
+
+    .hero-card strong { color: #fff; }
+    .hero-card span { display: block; color: #cbd5e1; margin-top: 5px; font-size: 13px; }
+
+    .shell {
+      max-width: 1480px;
+      margin: 0 auto;
+      padding: 22px 26px 60px;
+    }
+
+    .card {
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px;
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(150px, 1fr));
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 7px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 850;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+    }
+
+    select, input[type="range"] { width: 100%; }
+
+    select {
+      border: 1px solid var(--line);
+      background: white;
+      border-radius: 14px;
+      color: var(--ink);
+      padding: 12px 13px;
+      font-size: 14px;
+      font-weight: 650;
+      outline: none;
+    }
+
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 14px 0 22px;
+      position: sticky;
+      top: 0;
+      z-index: 9;
+      padding: 12px 0;
+      background: rgba(248,250,252,.94);
+      backdrop-filter: blur(14px);
+    }
+
+    .tab-btn {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 999px;
+      padding: 10px 14px;
+      color: #334155;
+      font-weight: 850;
+      cursor: pointer;
+      box-shadow: 0 9px 20px rgba(15,23,42,.06);
+      transition: .18s ease;
+    }
+
+    .tab-btn:hover { transform: translateY(-1px); }
+    .tab-btn.active {
+      background: var(--ink);
+      color: white;
+      border-color: var(--ink);
+    }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .grid { display: grid; gap: 18px; }
+    .grid.two { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+    .grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .grid.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .grid.five { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    .grid.kpis { grid-template-columns: repeat(8, minmax(0, 1fr)); margin-bottom: 18px; }
+
+    .kpi {
+      position: relative;
+      overflow: hidden;
+      min-height: 142px;
+    }
+
+    .kpi:after {
+      content: "";
+      position: absolute;
+      right: -48px;
+      bottom: -52px;
+      width: 124px;
+      height: 124px;
+      border-radius: 50%;
+      background: rgba(37,99,235,.09);
+    }
+
+    .kpi-title {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .065em;
+      margin-bottom: 8px;
+    }
+
+    .kpi-value {
+      font-size: 30px;
+      line-height: 1;
+      font-weight: 950;
+      letter-spacing: -.055em;
+      margin-bottom: 10px;
+    }
+
+    .kpi-note {
+      color: var(--muted);
+      font-size: 12px;
+      max-width: 190px;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      padding: 5px 9px;
+      font-size: 12px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+    .good { color: var(--green); background: rgba(22,163,74,.10); }
+    .warn { color: var(--amber); background: rgba(245,158,11,.13); }
+    .bad { color: var(--red); background: rgba(220,38,38,.10); }
+    .info { color: var(--blue); background: rgba(37,99,235,.10); }
+    .violet { color: var(--violet); background: rgba(124,58,237,.10); }
+
+    .section-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 18px;
+      margin: 28px 0 14px;
+    }
+
+    .section-title h2 {
+      margin: 0;
+      font-size: 26px;
+      letter-spacing: -.04em;
+    }
+
+    .section-title p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      max-width: 940px;
+    }
+
+    .formula-box {
+      margin: 12px 0;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #f8fafc;
+      color: #334155;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 13px;
+      overflow-x: auto;
+    }
+
+    .formula-box strong { color: var(--ink); }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th, td {
+      text-align: left;
+      border-bottom: 1px solid var(--line);
+      padding: 12px 10px;
+      vertical-align: top;
+    }
+
+    th {
+      color: var(--muted);
+      background: #f8fafc;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .065em;
+    }
+
+    tr:last-child td { border-bottom: 0; }
+    .metric-name { font-weight: 900; }
+    .small { font-size: 12px; color: var(--muted); }
+
+    .score-panel {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 24px;
+      align-items: center;
+    }
+
+    .donut {
+      width: 234px;
+      height: 234px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      margin: 0 auto;
+      background: conic-gradient(var(--green) 0deg, var(--green) 266deg, #e2e8f0 266deg, #e2e8f0 360deg);
+      position: relative;
+    }
+
+    .donut:before {
+      content: "";
+      position: absolute;
+      width: 164px;
+      height: 164px;
+      background: white;
+      border-radius: 50%;
+      box-shadow: inset 0 0 0 1px var(--line);
+    }
+
+    .donut-inner { position: relative; text-align: center; }
+    .donut-inner strong { display: block; font-size: 56px; line-height: .95; letter-spacing: -.065em; }
+    .donut-inner span { color: var(--muted); font-weight: 850; }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 170px 1fr 56px;
+      gap: 12px;
+      align-items: center;
+      font-size: 13px;
+      margin: 9px 0;
+    }
+
+    .bar-bg {
+      height: 10px;
+      background: #e2e8f0;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--blue), var(--cyan));
+      width: 50%;
+    }
+
+    .chart {
+      height: 260px;
+      display: flex;
+      align-items: flex-end;
+      gap: 12px;
+      padding: 16px 6px 0;
+      border-bottom: 1px solid var(--line);
+      border-left: 1px solid var(--line);
+      background: linear-gradient(180deg, #ffffff 0, #f8fafc 100%);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .chart-bar {
+      flex: 1;
+      min-width: 20px;
+      background: linear-gradient(180deg, var(--blue), var(--cyan));
+      border-radius: 10px 10px 0 0;
+      position: relative;
+      transition: .2s ease;
+    }
+
+    .chart-bar:hover { filter: brightness(.95); transform: translateY(-2px); }
+    .chart-bar span {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      top: -24px;
+      font-size: 11px;
+      font-weight: 850;
+      color: #334155;
+      white-space: nowrap;
+    }
+
+    .chart-labels {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 12px;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 11px;
+      text-align: center;
+    }
+
+    .leakage {
+      display: grid;
+      gap: 10px;
+    }
+
+    .leakage-row {
+      display: grid;
+      grid-template-columns: 190px 1fr 64px;
+      gap: 12px;
+      align-items: center;
+      font-size: 13px;
+    }
+
+    .impact-card {
+      border: 1px solid var(--line);
+      background: #f8fafc;
+      border-radius: 16px;
+      padding: 15px;
+    }
+
+    .impact-card h3 { margin: 0 0 8px; font-size: 16px; }
+    .impact-card p { margin: 0; color: var(--muted); font-size: 13px; }
+
+    .priority-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .priority-card {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 15px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      background: white;
+    }
+
+    .priority-card h3 { margin: 0 0 6px; font-size: 16px; }
+    .priority-card p { margin: 0; color: var(--muted); font-size: 13px; }
+    .priority-score {
+      width: 82px;
+      min-height: 64px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      font-size: 24px;
+      font-weight: 950;
+      letter-spacing: -.04em;
+      background: #f8fafc;
+    }
+
+    .accordion { display: grid; gap: 10px; }
+    .accordion-item {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    .accordion-button {
+      width: 100%;
+      border: 0;
+      background: white;
+      color: var(--ink);
+      padding: 15px 16px;
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      font-weight: 900;
+      cursor: pointer;
+      text-align: left;
+    }
+    .accordion-content {
+      display: none;
+      padding: 0 16px 16px;
+      color: #475569;
+      font-size: 14px;
+    }
+    .accordion-item.open .accordion-content { display: block; }
+
+    .stack-map {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .stack-card {
+      border: 1px solid var(--line);
+      background: #f8fafc;
+      border-radius: 16px;
+      padding: 14px;
+    }
+    .stack-card h3 { margin: 0 0 8px; font-size: 15px; }
+    .stack-card ul { margin: 0; padding-left: 18px; color: var(--muted); font-size: 13px; }
+    .stack-card li { margin-bottom: 5px; }
+
+    .funnel {
+      display: grid;
+      gap: 10px;
+    }
+    .funnel-step {
+      display: grid;
+      grid-template-columns: 180px 1fr 96px;
+      gap: 12px;
+      align-items: center;
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      font-size: 13px;
+    }
+
+    .footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 28px;
+    }
+
+    @media (max-width: 1280px) {
+      .grid.kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .grid.five, .stack-map { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .hero-inner, .score-panel { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 920px) {
+      .toolbar, .grid.two, .grid.three, .grid.four, .grid.five, .grid.kpis, .stack-map { grid-template-columns: 1fr; }
+      .shell { padding: 18px 14px 40px; }
+      .hero { padding: 28px 16px; }
+      .tabs { position: relative; }
+      .bar-row, .leakage-row, .funnel-step { grid-template-columns: 1fr; gap: 6px; }
+      .chart-labels { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-inner">
+      <div>
+        <div class="eyebrow">SEO Dashboard · Category X · Enterprise ecommerce</div>
+        <h1>Category SEO Performance Dashboard</h1>
+        <p>
+          Interactive prototype for measuring and analyzing the SEO performance of every ecommerce category separately. Designed for a comparison-shopping marketplace style website such as Heureka.sk, where category visibility, SERP features, competitors, commercial intent and business impact must be evaluated together.
+        </p>
+      </div>
+      <div class="hero-card">
+        <strong>Dashboard question</strong>
+        <span>Is this category growing because of real SEO strength — or only surviving despite SERP leakage, AI features, competitors and technical friction?</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section class="toolbar card">
+      <div>
+        <label for="categorySelect">Category</label>
+        <select id="categorySelect">
+          <option value="categoryX">Category X</option>
+          <option value="pneu">Pneumatiky / Tires</option>
+          <option value="mobiles">Mobile phones</option>
+          <option value="appliances">Large appliances</option>
+        </select>
+      </div>
+      <div>
+        <label for="marketSelect">Market</label>
+        <select id="marketSelect">
+          <option value="sk">Slovakia</option>
+          <option value="cz">Czechia</option>
+          <option value="hu">Hungary</option>
+        </select>
+      </div>
+      <div>
+        <label for="deviceSelect">Device</label>
+        <select id="deviceSelect">
+          <option value="mobile">Mobile</option>
+          <option value="desktop">Desktop</option>
+          <option value="all">All devices</option>
+        </select>
+      </div>
+      <div>
+        <label for="periodSelect">Period</label>
+        <select id="periodSelect">
+          <option value="28">Last 28 days</option>
+          <option value="90">Last 90 days</option>
+          <option value="180">Last 180 days</option>
+        </select>
+      </div>
+      <div>
+        <label for="strictnessRange">Sensitivity: <span id="strictnessLabel">Balanced</span></label>
+        <input id="strictnessRange" type="range" min="1" max="3" value="2" />
+      </div>
+    </section>
+
+    <nav class="tabs" aria-label="Dashboard navigation">
+      <button class="tab-btn active" data-tab="summary">Executive Summary</button>
+      <button class="tab-btn" data-tab="visibility">SEO Visibility</button>
+      <button class="tab-btn" data-tab="intent">Commercial Intent</button>
+      <button class="tab-btn" data-tab="serp">SERP & AI Impact</button>
+      <button class="tab-btn" data-tab="competitors">Competitors</button>
+      <button class="tab-btn" data-tab="business">Business Impact</button>
+      <button class="tab-btn" data-tab="metrics">Metrics & Formulas</button>
+      <button class="tab-btn" data-tab="stack">Stack & Workflow</button>
+    </nav>
+
+    <section id="summary" class="tab-panel active">
+      <div class="grid kpis">
+        <article class="card kpi"><div class="kpi-title">SEO Visibility</div><div class="kpi-value" id="kpiVisibility">64</div><div class="kpi-note">Weighted visibility across tracked commercial keywords.</div></article>
+        <article class="card kpi"><div class="kpi-title">Commercial Intent</div><div class="kpi-value" id="kpiIntent">78</div><div class="kpi-note">Share and quality of keywords with transactional / comparison intent.</div></article>
+        <article class="card kpi"><div class="kpi-title">Category Health</div><div class="kpi-value" id="kpiHealth">72</div><div class="kpi-note">Blended technical, content and visibility readiness.</div></article>
+        <article class="card kpi"><div class="kpi-title">SERP Feature Pressure</div><div class="kpi-value" id="kpiSerpPressure">High</div><div class="kpi-note">Ads, Shopping, Local, video, AI and rich SERP competition.</div></article>
+        <article class="card kpi"><div class="kpi-title">CTR Leakage</div><div class="kpi-value" id="kpiLeakage">38%</div><div class="kpi-note">Estimated lost organic clicks due to SERP features and weak positions.</div></article>
+        <article class="card kpi"><div class="kpi-title">AI / Google Feature Impact</div><div class="kpi-value" id="kpiAiImpact">Medium</div><div class="kpi-note">Risk/opportunity from AI Overviews, snippets and shopping modules.</div></article>
+        <article class="card kpi"><div class="kpi-title">Competitor Momentum</div><div class="kpi-value" id="kpiMomentum">-4%</div><div class="kpi-note">Visibility delta vs competitor set.</div></article>
+        <article class="card kpi"><div class="kpi-title">SEO Revenue Impact</div><div class="kpi-value" id="kpiRevenue">€41k</div><div class="kpi-note">Estimated organic revenue or lead value attributed to the category.</div></article>
+      </div>
+
+      <div class="grid two">
+        <article class="card">
+          <div class="section-title" style="margin-top:0">
+            <div>
+              <h2>Category SEO Opportunity Score</h2>
+              <p>A single executive score summarizing whether the category deserves SEO focus now. It combines visibility gap, commercial demand, SERP leakage, competitor weakness and business value.</p>
+            </div>
+          </div>
+          <div class="score-panel">
+            <div class="donut" id="opportunityDonut"><div class="donut-inner"><strong id="opportunityScore">74</strong><span>/ 100</span></div></div>
+            <div>
+              <div class="formula-box">
+                <strong>SEO Opportunity Score</strong> =<br />
+                0.25 × Visibility Gap + 0.20 × Commercial Intent + 0.15 × Business Value + 0.15 × CTR Recovery Potential + 0.10 × Competitor Weakness + 0.10 × Category Health + 0.05 × AI Feature Opportunity
+              </div>
+              <div id="scoreDrivers"></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="section-title" style="margin-top:0">
+            <div>
+              <h2>Executive diagnosis</h2>
+              <p id="executiveDiagnosis">Category X has a strong commercial base, but organic growth is constrained by ranking distribution and SERP leakage.</p>
+            </div>
+          </div>
+          <div class="priority-grid" id="executiveRisks"></div>
+        </article>
+      </div>
+
+      <div class="section-title">
+        <div>
+          <h2>Top KPI layer: what management should see first</h2>
+          <p>Use this layer for weekly SEO/category review. It should be simple enough for executives and precise enough for SEO/BI teams.</p>
+        </div>
+      </div>
+      <div class="card">
+        <table>
+          <thead><tr><th>KPI</th><th>Current</th><th>Target</th><th>Interpretation</th><th>Action if below target</th></tr></thead>
+          <tbody id="topKpiTable"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="visibility" class="tab-panel">
+      <div class="section-title">
+        <div>
+          <h2>SEO visibility and ranking distribution</h2>
+          <p>Visibility is not the same as ranking. Ranking shows position; visibility estimates how much discoverable search demand the category captures.</p>
+        </div>
+      </div>
+      <div class="grid two">
+        <article class="card">
+          <h2>Visibility trend</h2>
+          <div class="formula-box">Visibility Index = Σ(Search Volume × CTR by Position × Intent Weight × SERP Availability Weight) ÷ Total Weighted Search Volume × 100</div>
+          <div class="chart" id="visibilityChart"></div>
+          <div class="chart-labels"><span>M-5</span><span>M-4</span><span>M-3</span><span>M-2</span><span>M-1</span><span>Current</span></div>
+        </article>
+        <article class="card">
+          <h2>Ranking distribution</h2>
+          <table>
+            <thead><tr><th>Bucket</th><th>Keywords</th><th>Share</th><th>SEO meaning</th></tr></thead>
+            <tbody id="rankTable"></tbody>
+          </table>
+        </article>
+      </div>
+
+      <div class="section-title">
+        <div><h2>Visibility gap analysis</h2><p>Find where competitors capture clicks that should be addressable by the selected category.</p></div>
+      </div>
+      <div class="card">
+        <table>
+          <thead><tr><th>Keyword cluster</th><th>Demand</th><th>Current avg. position</th><th>Leader</th><th>Visibility gap</th><th>Recommended move</th></tr></thead>
+          <tbody id="gapTable"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="intent" class="tab-panel">
+      <div class="section-title">
+        <div>
+          <h2>Commercial intent model</h2>
+          <p>Enterprise ecommerce SEO should not chase search volume blindly. A low-volume query with buying intent may be more valuable than a big informational query that never converts.</p>
+        </div>
+      </div>
+      <div class="grid two">
+        <article class="card">
+          <h2>Intent mix</h2>
+          <div class="formula-box">Commercial Intent Score = Σ(Keyword Demand × Intent Weight × Conversion Proxy) ÷ Σ(Keyword Demand) × 100</div>
+          <table>
+            <thead><tr><th>Intent type</th><th>Weight</th><th>Demand share</th><th>Category role</th></tr></thead>
+            <tbody id="intentTable"></tbody>
+          </table>
+        </article>
+        <article class="card">
+          <h2>Keyword prioritization formula</h2>
+          <div class="formula-box">Keyword Priority = Search Volume × Intent Weight × Business Margin Weight × Current Gap Multiplier × SERP Clickability × Seasonality Index</div>
+          <div class="funnel" id="intentFunnel"></div>
+        </article>
+      </div>
+
+      <div class="section-title">
+        <div><h2>Keyword cluster priority queue</h2><p>Use this for content, internal linking and category template optimization planning.</p></div>
+      </div>
+      <div class="card">
+        <table>
+          <thead><tr><th>Cluster</th><th>Intent</th><th>Priority score</th><th>Current problem</th><th>Recommended SEO action</th></tr></thead>
+          <tbody id="clusterTable"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="serp" class="tab-panel">
+      <div class="section-title">
+        <div>
+          <h2>SERP features, CTR leakage and AI / Google feature impact</h2>
+          <p>Category SEO performance depends not only on your position, but also on how much of the SERP is still clickable for classic organic results.</p>
+        </div>
+      </div>
+
+      <div class="grid two">
+        <article class="card">
+          <h2>CTR leakage model</h2>
+          <div class="formula-box">CTR Leakage = Expected Organic Clicks from Ranking Position − Actual Organic Clicks adjusted for SERP Features</div>
+          <div class="leakage" id="leakageRows"></div>
+        </article>
+        <article class="card">
+          <h2>SERP feature footprint</h2>
+          <table>
+            <thead><tr><th>Feature</th><th>Presence</th><th>Impact</th><th>SEO response</th></tr></thead>
+            <tbody id="serpTable"></tbody>
+          </table>
+        </article>
+      </div>
+
+      <div class="section-title">
+        <div><h2>AI / Google feature analysis</h2><p>Measure whether AI, snippets and Google shopping-like modules reduce clicks, create citation opportunities or shift the content format needed to win visibility.</p></div>
+      </div>
+      <div class="grid three" id="aiCards"></div>
+    </section>
+
+    <section id="competitors" class="tab-panel">
+      <div class="section-title">
+        <div>
+          <h2>Competitor dynamics</h2>
+          <p>For every category, compare your visibility against the real SERP competitor set, not only direct business competitors.</p>
+        </div>
+      </div>
+      <div class="grid two">
+        <article class="card">
+          <h2>Competitor visibility table</h2>
+          <table>
+            <thead><tr><th>Domain</th><th>Visibility</th><th>Top 3 KW</th><th>MoM change</th><th>Threat level</th></tr></thead>
+            <tbody id="competitorTable"></tbody>
+          </table>
+        </article>
+        <article class="card">
+          <h2>Competitor movement chart</h2>
+          <div class="formula-box">Competitor Momentum = Current Visibility Share − Previous Period Visibility Share</div>
+          <div class="chart" id="competitorChart"></div>
+          <div class="chart-labels"><span>Us</span><span>Comp A</span><span>Comp B</span><span>Comp C</span><span>Comp D</span><span>Market</span></div>
+        </article>
+      </div>
+
+      <div class="section-title">
+        <div><h2>Competitor gap by SEO asset</h2><p>This section translates competitor analysis into actionable SEO work.</p></div>
+      </div>
+      <div class="card">
+        <table>
+          <thead><tr><th>Gap type</th><th>Competitor advantage</th><th>Why it matters</th><th>Action</th></tr></thead>
+          <tbody id="assetGapTable"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="business" class="tab-panel">
+      <div class="section-title">
+        <div>
+          <h2>Business impact model</h2>
+          <p>The dashboard should connect SEO performance with commercial outcomes: visits, leads, product clicks, comparison starts, conversion proxy and revenue/margin weight.</p>
+        </div>
+      </div>
+      <div class="grid two">
+        <article class="card">
+          <h2>SEO business funnel</h2>
+          <div class="formula-box">SEO Revenue Impact = Organic Sessions × Category Conversion Rate × Average Order / Lead Value × Attribution Weight</div>
+          <div class="funnel" id="businessFunnel"></div>
+        </article>
+        <article class="card">
+          <h2>Opportunity forecast</h2>
+          <div class="formula-box">Additional Clicks = Search Volume × (Target CTR − Current CTR) × SERP Availability Weight</div>
+          <table>
+            <thead><tr><th>Scenario</th><th>Additional clicks</th><th>Revenue / value uplift</th><th>Assumption</th></tr></thead>
+            <tbody id="forecastTable"></tbody>
+          </table>
+        </article>
+      </div>
+
+      <div class="section-title">
+        <div><h2>Priority roadmap</h2><p>Prioritize by business value, not only SEO elegance. Beautiful dashboards do not rank pages; boring execution does.</p></div>
+      </div>
+      <div class="card">
+        <div class="formula-box">Roadmap Priority = SEO Impact × Business Value × Confidence × Speed ÷ Effort</div>
+        <table>
+          <thead><tr><th>Initiative</th><th>SEO impact</th><th>Business value</th><th>Effort</th><th>Priority</th><th>Owner</th></tr></thead>
+          <tbody id="roadmapTable"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="metrics" class="tab-panel">
+      <div class="section-title">
+        <div>
+          <h2>Metric dictionary: formulas, meaning and tools</h2>
+          <p>Use this to align SEO, BI, category managers and engineering. The same metric name must mean the same thing in every category review.</p>
+        </div>
+      </div>
+      <div class="accordion" id="metricAccordion"></div>
+    </section>
+
+    <section id="stack" class="tab-panel">
+      <div class="section-title">
+        <div>
+          <h2>Recommended stack and data workflow</h2>
+          <p>For enterprise ecommerce, the dashboard should sit on a URL-level and keyword-cluster-level data model, ideally in BigQuery or another warehouse.</p>
+        </div>
+      </div>
+
+      <div class="stack-map">
+        <div class="stack-card"><h3>Search performance</h3><ul><li>Google Search Console API</li><li>GSC bulk export</li><li>Keyword rank tracking</li><li>CTR benchmark table</li></ul></div>
+        <div class="stack-card"><h3>Keyword intelligence</h3><ul><li>Semrush / Ahrefs</li><li>Keyword Planner</li><li>Internal site search</li><li>Google Trends</li></ul></div>
+        <div class="stack-card"><h3>SERP monitoring</h3><ul><li>Rank tracker SERP features</li><li>Manual SERP checks</li><li>AI Overview tracking</li><li>Shopping / ads presence</li></ul></div>
+        <div class="stack-card"><h3>Technical health</h3><ul><li>Screaming Frog</li><li>Sitebulb / Botify / Oncrawl</li><li>Server logs</li><li>CrUX / PSI API</li></ul></div>
+        <div class="stack-card"><h3>Business data</h3><ul><li>GA4 ecommerce events</li><li>Internal BI</li><li>Product availability</li><li>Margin / category priority</li></ul></div>
+        <div class="stack-card"><h3>Visualization</h3><ul><li>Looker Studio</li><li>Power BI</li><li>BigQuery views</li><li>Python notebooks</li></ul></div>
+      </div>
+
+      <div class="section-title">
+        <div><h2>Step-by-step implementation framework</h2><p>Build the dashboard in layers. Do not start with a beautiful report before the data definitions are clean.</p></div>
+      </div>
+      <div class="grid four">
+        <div class="impact-card"><h3>1. Define category universe</h3><p>Map all category URLs, strategic facets, keyword clusters and business category IDs.</p></div>
+        <div class="impact-card"><h3>2. Build keyword cluster table</h3><p>Group queries by intent, SERP type, category, seasonality and business value.</p></div>
+        <div class="impact-card"><h3>3. Join performance data</h3><p>Merge GSC, rankings, SERP features, crawl health and business outcomes by URL/category/cluster.</p></div>
+        <div class="impact-card"><h3>4. Calculate KPI layer</h3><p>Calculate visibility, CTR leakage, commercial intent, category health and opportunity score.</p></div>
+        <div class="impact-card"><h3>5. Add diagnostics</h3><p>Show where visibility is blocked: positions, features, competitors, technical issues, content gaps.</p></div>
+        <div class="impact-card"><h3>6. Create issue queue</h3><p>Convert findings into prioritized initiatives with owners, effort and expected impact.</p></div>
+        <div class="impact-card"><h3>7. Monitor releases</h3><p>Track before/after movement after technical, content and internal linking changes.</p></div>
+        <div class="impact-card"><h3>8. Review by category</h3><p>Run weekly category reviews and monthly cross-category comparisons to find scalable patterns.</p></div>
+      </div>
+
+      <div class="section-title"><div><h2>Core warehouse tables</h2></div></div>
+      <div class="card">
+        <table>
+          <thead><tr><th>Table</th><th>Grain</th><th>Core fields</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td class="metric-name">dim_category</td><td>1 row per category</td><td>category_id, category_name, market, language, priority_weight, margin_weight</td><td>Defines business category scope.</td></tr>
+            <tr><td class="metric-name">dim_keyword_cluster</td><td>1 row per cluster</td><td>cluster_id, category_id, intent_type, demand, seasonality, serp_type</td><td>Groups keyword demand into measurable units.</td></tr>
+            <tr><td class="metric-name">gsc_url_query_daily</td><td>URL × query × date</td><td>clicks, impressions, ctr, avg_position, device, country</td><td>Real organic performance.</td></tr>
+            <tr><td class="metric-name">rank_serp_daily</td><td>keyword × domain × date</td><td>position, serp_features, ai_presence, ads_presence, url</td><td>Competitive visibility and SERP layout.</td></tr>
+            <tr><td class="metric-name">category_technical_snapshot</td><td>URL × crawl date</td><td>indexability, status, canonical, depth, CWV, schema, internal links</td><td>Technical context for performance issues.</td></tr>
+            <tr><td class="metric-name">business_category_daily</td><td>category × date</td><td>organic_sessions, leads, product_clicks, revenue, conversion_rate</td><td>Business impact and forecasting.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="footer">Interactive prototype with mock data · Replace demo values with GSC, rank tracker, SERP, crawl, BI and BigQuery sources in production.</div>
+  </main>
+
+  <script>
+    const datasets = {
+      categoryX: {
+        name: 'Category X', visibility: 64, intent: 78, health: 72, serpPressure: 'High', leakage: 38, aiImpact: 'Medium', momentum: -4, revenue: 41000, opportunity: 74,
+        diagnosis: 'Category X has strong commercial demand, but organic growth is limited by ranking distribution, SERP feature pressure and competitor coverage across strategic query clusters.',
+        drivers: [['Visibility Gap', 76], ['Commercial Intent', 78], ['Business Value', 70], ['CTR Recovery', 68], ['Competitor Weakness', 66], ['Category Health', 72], ['AI Opportunity', 58]],
+        risks: [['High CTR leakage', 'SERP features and weak Top 3 coverage reduce organic click capture despite meaningful impressions.', 82, 'bad'], ['Competitors own comparison queries', 'Competitors have stronger pages for high-intent modifier clusters.', 73, 'warn'], ['AI/snippet coverage is unstable', 'The category appears in AI/snippet-like SERP blocks, but citation ownership is inconsistent.', 61, 'info']],
+        topKpis: [['SEO Visibility', '64/100', '75+', 'Category captures part of demand but still lacks strong Top 3 coverage.', 'Improve pages and internal links for high-value clusters.'], ['Commercial Intent Score', '78/100', '70+', 'Good category for SEO investment because keywords are close to buying/comparison decisions.', 'Prioritize transactional and comparison clusters first.'], ['CTR Leakage', '38%', '<25%', 'A large share of potential clicks is lost to SERP layout and position distribution.', 'Improve rankings and target SERP features.'], ['Competitor Momentum', '-4%', 'Positive', 'Competitors gained slightly more visibility in the selected period.', 'Analyze winning competitor pages and clusters.'], ['SEO Revenue Impact', '€41k', 'Growing', 'Current organic category value is meaningful enough to justify focused work.', 'Connect initiatives to revenue forecast.']],
+        trend: [51, 55, 58, 60, 63, 64],
+        ranks: [['Top 1', 14, '7%', 'Strong ownership, but too narrow.'], ['Top 3', 39, '18%', 'Main growth lever for CTR recovery.'], ['Top 4–10', 88, '41%', 'Largest near-term opportunity bucket.'], ['Positions 11–20', 47, '22%', 'Needs content/internal link improvements.'], ['Below 20', 26, '12%', 'Low current value unless demand is high.']],
+        gaps: [['Best + category', 'High', 5.8, 'Competitor A', 'Large', 'Rewrite category intro, add comparison blocks, strengthen internal links.'], ['Category + price', 'Medium', 7.4, 'Competitor B', 'Medium', 'Improve price-related modules and schema consistency.'], ['Brand + category', 'High', 8.1, 'Competitor C', 'Large', 'Create/selectively index brand-category pages.'], ['Category reviews', 'Medium', 12.6, 'Competitor A', 'High', 'Build review/comparison content layer.']],
+        intents: [['Transactional', 1.00, '34%', 'Money keywords: buy, price, discount, e-shop, product comparison.'], ['Commercial investigation', 0.85, '42%', 'Best, reviews, comparison, alternatives, parameters.'], ['Informational', 0.35, '18%', 'Guides and education; supports authority and internal links.'], ['Navigational / brand', 0.20, '6%', 'Useful for brand defense, weaker for category expansion.']],
+        funnel: [['Raw keyword demand', '100%', 'All discovered category queries.'], ['Commercially relevant demand', '76%', 'Queries with transactional or comparison intent.'], ['Addressable organic demand', '58%', 'Demand where organic results still receive meaningful clicks.'], ['Current captured clicks', '22%', 'Estimated current organic capture.']],
+        clusters: [['Best category X', 'Commercial investigation', 86, 'Ranking between positions 4–8.', 'Improve comparison content and freshness signals.'], ['Category X price', 'Transactional', 79, 'SERP has ads and shopping modules.', 'Add price modules, structured data and stronger title patterns.'], ['Brand + category X', 'Transactional', 74, 'Strategic facets not consistently indexable.', 'Build selective facet landing pages.'], ['How to choose category X', 'Informational', 54, 'Weak supporting content.', 'Create buying guide linked to category page.']],
+        leakageRows: [['Position distribution loss', 16], ['Ads / shopping modules', 9], ['SERP features', 7], ['AI / answer blocks', 4], ['Snippet mismatch', 2]],
+        serp: [['Paid ads', '82%', 'High click diversion above organic results.', 'Use SEO + PPC query sharing and measure organic clickability.'], ['Shopping/product modules', '67%', 'Comparison intent may be partially satisfied inside Google.', 'Strengthen product feeds, titles, structured data and merchant data.'], ['Featured snippets / PAA', '41%', 'Can steal clicks or create visibility opportunity.', 'Add concise answer blocks and FAQ-style content.'], ['AI overview / generative block', '18%', 'Potential citation opportunity and click risk.', 'Track presence, cited domains and content patterns.']],
+        aiCards: [['AI visibility risk', 'Medium', 'Some commercial investigation queries show AI-like summaries or enriched answer blocks. Measure whether the category is cited or bypassed.'], ['Citation opportunity', 'Moderate', 'Comparison tables, clear pros/cons, product attributes and trusted category guides may improve eligibility for citation-like visibility.'], ['Measurement rule', 'Strict', 'Track presence by query cluster, not only globally. One category can be heavily affected while another is untouched.']],
+        competitors: [['heureka.sk / selected category', 64, 39, '-4%', 'Watch'], ['competitor-a.sk', 71, 58, '+6%', 'High'], ['competitor-b.sk', 62, 33, '+2%', 'Medium'], ['manufacturer domains', 47, 21, '+1%', 'Medium'], ['content publishers', 38, 12, '-3%', 'Low']],
+        compChart: [64, 71, 62, 47, 38, 55],
+        assetGaps: [['Content depth', 'More complete buying guides and comparison logic.', 'Helps win commercial investigation queries.', 'Add modular category guide sections.'], ['Facet landing pages', 'Better brand/parameter pages.', 'Captures long-tail commercial demand.', 'Create selective indexation model.'], ['Internal linking', 'Stronger links from guides and related categories.', 'Improves discovery and authority flow.', 'Add contextual modules and breadcrumbs.'], ['SERP feature targeting', 'Competitors own snippets and PAA answers.', 'Reduces CTR leakage.', 'Add answer blocks and structured content.']],
+        businessFunnel: [['Impressions', '1,240,000', 'GSC category query/page impressions.'], ['Organic clicks', '86,800', 'Clicks captured after ranking and SERP layout.'], ['Product detail / offer clicks', '21,700', 'Marketplace engagement proxy.'], ['Estimated SEO value', '€41,000', 'Organic revenue or lead/proxy value.']],
+        forecast: [['Conservative', '+7,400', '+€5,900', 'Move selected keywords from positions 6–9 to 4–6.'], ['Realistic', '+18,600', '+€14,800', 'Win more Top 3 positions in high-intent clusters.'], ['Aggressive', '+34,000', '+€27,100', 'Top 3 growth + SERP feature capture + CTR improvement.']],
+        roadmap: [['Improve Top 4–10 commercial clusters', 'High', 'High', 'Medium', 88, 'SEO + Content'], ['Build selective facet landing pages', 'High', 'High', 'High', 78, 'SEO + Product + Engineering'], ['Reduce CTR leakage with SERP feature targeting', 'Medium', 'High', 'Medium', 74, 'SEO'], ['Create category guide module', 'Medium', 'Medium', 'Low', 69, 'SEO + Content'], ['Connect PPC and SEO query data', 'Medium', 'Medium', 'Low', 66, 'SEO + PPC + BI']]
+      },
+      pneu: {
+        name: 'Pneumatiky / Tires', visibility: 58, intent: 84, health: 69, serpPressure: 'Very High', leakage: 46, aiImpact: 'Medium', momentum: -7, revenue: 53000, opportunity: 82,
+        diagnosis: 'The tires category is commercially attractive but highly compressed by ads, shopping modules, strong competitors and seasonal volatility. SEO upside exists, but only if priority clusters are selected carefully.',
+        drivers: [['Visibility Gap', 84], ['Commercial Intent', 84], ['Business Value', 82], ['CTR Recovery', 80], ['Competitor Weakness', 62], ['Category Health', 69], ['AI Opportunity', 55]],
+        risks: [['SERP is crowded', 'Ads, shopping and comparison modules reduce organic CTR even when rankings look acceptable.', 89, 'bad'], ['Seasonality requires timing', 'Technical and content fixes must be released before demand peaks.', 80, 'warn'], ['Long-tail facets are underused', 'Size/season/brand combinations can capture high-intent demand if controlled correctly.', 76, 'warn']],
+        topKpis: [['SEO Visibility', '58/100', '70+', 'Visibility is weaker than commercial demand justifies.', 'Focus on high-intent Top 4–10 keywords.'], ['Commercial Intent Score', '84/100', '75+', 'Excellent SEO business case.', 'Prioritize this category before weak-intent categories.'], ['CTR Leakage', '46%', '<30%', 'Organic clicks are heavily reduced by SERP layout.', 'Target features and improve Top 3 coverage.'], ['Competitor Momentum', '-7%', 'Positive', 'Competitors are gaining faster.', 'Analyze new winning pages and content formats.'], ['SEO Revenue Impact', '€53k', 'Growing', 'High business value category.', 'Prioritize before seasonal peak.']],
+        trend: [48, 51, 54, 61, 60, 58], ranks: [['Top 1', 8, '4%', 'Too little ownership.'], ['Top 3', 27, '13%', 'Main growth bottleneck.'], ['Top 4–10', 96, '45%', 'Biggest opportunity.'], ['Positions 11–20', 52, '24%', 'Needs stronger pages and links.'], ['Below 20', 31, '14%', 'Selective work only.']],
+        gaps: [['letne pneumatiky', 'High', 6.7, 'Competitor A', 'Large', 'Improve seasonal category page and internal linking.'], ['zimne pneumatiky', 'High', 8.5, 'Competitor B', 'Large', 'Prepare content/technical work before season.'], ['pneumatiky cena', 'Medium', 7.9, 'Competitor A', 'Medium', 'Strengthen price comparison modules.'], ['brand + tyre size', 'High', 10.2, 'Competitor C', 'High', 'Selective facet landing page strategy.']],
+        intents: [['Transactional', 1.00, '39%', 'Price, shop, buy and offer-driven queries.'], ['Commercial investigation', 0.85, '45%', 'Best tyres, tests, reviews, comparison.'], ['Informational', 0.35, '12%', 'Guides: how to choose, season rules, sizes.'], ['Navigational / brand', 0.20, '4%', 'Brand defense and manufacturer-led demand.']],
+        funnel: [['Raw keyword demand', '100%', 'All tire-related queries.'], ['Commercially relevant demand', '84%', 'Very strong buying/comparison intent.'], ['Addressable organic demand', '51%', 'SERP is heavily crowded.'], ['Current captured clicks', '18%', 'SEO has material upside but needs prioritization.']],
+        clusters: [['Summer tyres', 'Transactional', 91, 'Positions 5–9 on high-volume queries.', 'Improve seasonal landing page and internal links.'], ['Winter tyres', 'Transactional', 88, 'Seasonality and competitor strength.', 'Prepare content before demand spike.'], ['Tyre tests/reviews', 'Commercial investigation', 77, 'Competitors own informational-commercial bridge.', 'Create test/review hub linked to category.'], ['Brand + size tyres', 'Transactional', 75, 'Facet policy inconsistent.', 'Build controlled long-tail landing pages.']],
+        leakageRows: [['Position distribution loss', 19], ['Ads / shopping modules', 14], ['SERP features', 6], ['AI / answer blocks', 3], ['Snippet mismatch', 4]],
+        serp: [['Paid ads', '91%', 'Very high click diversion.', 'Coordinate PPC and SEO; do not overestimate organic potential.'], ['Shopping/product modules', '79%', 'Major compression of classic organic results.', 'Improve product data and structured category information.'], ['Featured snippets / PAA', '36%', 'Opportunity for guides and buying advice.', 'Answer seasonal and size-selection questions.'], ['AI overview / generative block', '14%', 'Currently moderate but should be tracked.', 'Create authoritative comparison and guide content.']],
+        aiCards: [['AI visibility risk', 'Medium', 'Buying advice and product comparison queries may trigger AI-style summaries.'], ['Citation opportunity', 'Good', 'Well-structured tyre guides, tests, sizing explanations and comparison data can support citation-like visibility.'], ['Measurement rule', 'Seasonal', 'Track AI and SERP feature impact separately for summer/winter peaks.']],
+        competitors: [['heureka.sk / pneu', 58, 27, '-7%', 'High'], ['competitor-a.sk', 74, 64, '+8%', 'High'], ['competitor-b.sk', 67, 45, '+4%', 'High'], ['manufacturer domains', 52, 22, '+2%', 'Medium'], ['publishers/tests', 45, 19, '+5%', 'Medium']],
+        compChart: [58, 74, 67, 52, 45, 59], assetGaps: [['Seasonal content', 'Competitors own summer/winter guide queries.', 'Captures users before purchase.', 'Build seasonal SEO modules.'], ['Facet coverage', 'Better size/brand pages.', 'Captures long-tail commercial demand.', 'Controlled indexation model.'], ['Review content', 'Publishers own test/review SERPs.', 'Influences pre-purchase comparison.', 'Create review/test content layer.'], ['Internal links', 'Competitors route authority better to seasonal hubs.', 'Improves Top 3 potential.', 'Navigation + guide links.']],
+        businessFunnel: [['Impressions', '1,780,000', 'Strong seasonal demand.'], ['Organic clicks', '92,400', 'Low relative capture due to SERP pressure.'], ['Product detail / offer clicks', '29,200', 'High marketplace engagement.'], ['Estimated SEO value', '€53,000', 'Meaningful category value.']],
+        forecast: [['Conservative', '+9,800', '+€7,900', 'Improve selected Top 4–10 terms.'], ['Realistic', '+25,500', '+€20,700', 'Seasonal pages + facets + snippets.'], ['Aggressive', '+48,000', '+€38,900', 'Top 3 expansion before season peak.']],
+        roadmap: [['Seasonal landing page optimization', 'High', 'Very high', 'Medium', 92, 'SEO + Category'], ['Controlled tyre-size facets', 'High', 'High', 'High', 84, 'SEO + Engineering'], ['Review/test content hub', 'Medium', 'High', 'Medium', 76, 'SEO + Content'], ['PPC/SEO query sharing', 'Medium', 'Medium', 'Low', 70, 'SEO + PPC']]
+      },
+      mobiles: {
+        name: 'Mobile phones', visibility: 76, intent: 72, health: 82, serpPressure: 'High', leakage: 31, aiImpact: 'High', momentum: 5, revenue: 62000, opportunity: 67,
+        diagnosis: 'Mobile phones has strong baseline visibility and category health. The main risk is Google feature volatility and intense brand/manufacturer competition.',
+        drivers: [['Visibility Gap', 58], ['Commercial Intent', 72], ['Business Value', 84], ['CTR Recovery', 55], ['Competitor Weakness', 50], ['Category Health', 82], ['AI Opportunity', 73]],
+        risks: [['AI/snippet impact is high', 'Comparison and specification queries are vulnerable to answer-style SERP features.', 78, 'warn'], ['Manufacturer domains are strong', 'Brand-heavy SERPs limit marketplace capture for some clusters.', 65, 'warn'], ['Opportunity is more selective', 'Because baseline visibility is already good, broad SEO work may have lower marginal ROI.', 55, 'info']],
+        topKpis: [['SEO Visibility', '76/100', '80+', 'Strong visibility but still room in comparison clusters.', 'Focus on high-margin and new-model terms.'], ['Commercial Intent Score', '72/100', '70+', 'Good commercial demand.', 'Prioritize comparison and price clusters.'], ['CTR Leakage', '31%', '<25%', 'Moderate leakage.', 'Improve SERP feature ownership.'], ['Competitor Momentum', '+5%', 'Positive', 'Outperforming competitor set.', 'Protect gains and monitor new model launches.'], ['SEO Revenue Impact', '€62k', 'Growing', 'High-value category.', 'Optimize launch/event windows.']],
+        trend: [65, 68, 70, 72, 75, 76], ranks: [['Top 1', 31, '13%', 'Strong ownership.'], ['Top 3', 74, '31%', 'Healthy.'], ['Top 4–10', 81, '34%', 'Moderate upside.'], ['Positions 11–20', 35, '15%', 'Selective growth.'], ['Below 20', 17, '7%', 'Low priority.']],
+        gaps: [['best smartphones', 'High', 4.1, 'Publisher A', 'Medium', 'Improve editorial comparison layer.'], ['phone price', 'High', 3.8, 'Us', 'Small', 'Protect and improve snippets.'], ['brand + model', 'High', 5.4, 'Manufacturer', 'Medium', 'Improve model pages and internal links.'], ['phone comparison', 'Medium', 6.2, 'Competitor B', 'Medium', 'Strengthen comparison UI/content.']],
+        intents: [['Transactional', 1.00, '31%', 'Price and model terms.'], ['Commercial investigation', 0.85, '48%', 'Best, comparison, reviews.'], ['Informational', 0.35, '16%', 'Specs, how-to, troubleshooting.'], ['Navigational / brand', 0.20, '5%', 'Brand/model navigation.']],
+        funnel: [['Raw keyword demand', '100%', 'All phone category queries.'], ['Commercially relevant demand', '72%', 'Strong comparison intent.'], ['Addressable organic demand', '63%', 'SERP is crowded but still clickable.'], ['Current captured clicks', '39%', 'Strong current capture.']],
+        clusters: [['Best smartphones', 'Commercial investigation', 78, 'Publishers strong in Top 3.', 'Improve comparison guide and freshness.'], ['Phone price', 'Transactional', 74, 'SERP feature pressure.', 'Strengthen price snippets and modules.'], ['Brand + model', 'Transactional', 69, 'Manufacturer competition.', 'Optimize model pages and internal links.'], ['Phone comparison', 'Commercial investigation', 68, 'Comparison UX/content gap.', 'Build comparison content blocks.']],
+        leakageRows: [['Position distribution loss', 11], ['Ads / shopping modules', 8], ['SERP features', 5], ['AI / answer blocks', 5], ['Snippet mismatch', 2]],
+        serp: [['Paid ads', '72%', 'High but expected.', 'Coordinate SEO/PPC.'], ['Shopping/product modules', '74%', 'Strong product SERP compression.', 'Improve product data consistency.'], ['Featured snippets / PAA', '52%', 'High opportunity for specs/FAQ.', 'Use concise specs and comparison answers.'], ['AI overview / generative block', '29%', 'High impact on comparison queries.', 'Track citations and content formats.']],
+        aiCards: [['AI visibility risk', 'High', 'Specs and comparison queries are highly answerable by AI-like SERP features.'], ['Citation opportunity', 'High', 'Structured specifications, comparison tables and expert-like buying guides are strong assets.'], ['Measurement rule', 'Model-specific', 'Measure AI impact by device model and launch cycle.']],
+        competitors: [['heureka.sk / mobiles', 76, 74, '+5%', 'Medium'], ['publisher-a.sk', 79, 82, '+2%', 'High'], ['manufacturer domains', 72, 69, '+4%', 'High'], ['competitor-b.sk', 61, 41, '-1%', 'Medium'], ['retailers', 55, 28, '+3%', 'Medium']],
+        compChart: [76, 79, 72, 61, 55, 69], assetGaps: [['Editorial comparison', 'Publishers own best/review queries.', 'Captures upper-funnel commercial demand.', 'Improve guide depth and freshness.'], ['Model pages', 'Manufacturers dominate brand SERPs.', 'Limits click capture.', 'Strengthen model pages and schema.'], ['Specs snippets', 'Competitors win answer blocks.', 'Increases zero-click risk.', 'Add concise spec answers.'], ['Product freshness', 'Launch cycles shift demand fast.', 'SEO must react quickly.', 'Automated new-model SEO checks.']],
+        businessFunnel: [['Impressions', '2,100,000', 'Large category demand.'], ['Organic clicks', '168,000', 'Strong current capture.'], ['Product detail / offer clicks', '43,500', 'High product engagement.'], ['Estimated SEO value', '€62,000', 'High-value category.']],
+        forecast: [['Conservative', '+6,200', '+€4,700', 'Improve SERP features and snippets.'], ['Realistic', '+16,900', '+€12,600', 'Comparison content + model page gains.'], ['Aggressive', '+29,000', '+€21,700', 'Win more comparison Top 3 placements.']],
+        roadmap: [['Comparison guide refresh', 'Medium', 'High', 'Low', 77, 'SEO + Content'], ['Model page optimization', 'Medium', 'High', 'Medium', 72, 'SEO + Product'], ['AI/SERP feature tracking', 'Medium', 'Medium', 'Low', 69, 'SEO + BI'], ['Specs schema QA', 'Medium', 'Medium', 'Medium', 61, 'SEO + Engineering']]
+      },
+      appliances: {
+        name: 'Large appliances', visibility: 49, intent: 69, health: 61, serpPressure: 'Medium', leakage: 28, aiImpact: 'Low', momentum: -2, revenue: 26000, opportunity: 71,
+        diagnosis: 'Large appliances has weaker SEO health and visibility, but SERP pressure is lower. Growth depends more on technical/category hygiene and content coverage than on SERP feature battles.',
+        drivers: [['Visibility Gap', 82], ['Commercial Intent', 69], ['Business Value', 58], ['CTR Recovery', 45], ['Competitor Weakness', 70], ['Category Health', 61], ['AI Opportunity', 42]],
+        risks: [['Low category health', 'Technical and content gaps are probably limiting visibility before SERP features become the main problem.', 82, 'bad'], ['Weak Top 10 coverage', 'Many valuable clusters are stuck outside page one.', 73, 'warn'], ['Business value is moderate', 'Prioritize only clusters with demand and margin justification.', 56, 'info']],
+        topKpis: [['SEO Visibility', '49/100', '65+', 'Weak current capture.', 'Fix technical/content foundations.'], ['Commercial Intent Score', '69/100', '70+', 'Close to acceptable.', 'Prioritize high-value appliance types.'], ['CTR Leakage', '28%', '<25%', 'Moderate and not the main bottleneck.', 'Focus first on ranking growth.'], ['Competitor Momentum', '-2%', 'Positive', 'Slightly losing ground.', 'Target weak competitor clusters.'], ['SEO Revenue Impact', '€26k', 'Growing', 'Moderate business value.', 'Prioritize carefully.']],
+        trend: [42, 44, 45, 47, 50, 49], ranks: [['Top 1', 6, '3%', 'Very weak ownership.'], ['Top 3', 18, '9%', 'Insufficient.'], ['Top 4–10', 58, '29%', 'Main opportunity.'], ['Positions 11–20', 74, '37%', 'Needs foundation work.'], ['Below 20', 43, '22%', 'Low priority unless high value.']],
+        gaps: [['best washing machine', 'High', 13.2, 'Publisher A', 'High', 'Create buying guide and comparison content.'], ['fridge price', 'Medium', 9.8, 'Retailer B', 'Medium', 'Improve category page and price modules.'], ['dishwasher comparison', 'Medium', 15.4, 'Competitor C', 'High', 'Build comparison page/content.'], ['energy class appliances', 'Medium', 12.1, 'Publisher A', 'Medium', 'Add guide content and internal links.']],
+        intents: [['Transactional', 1.00, '27%', 'Price and product category terms.'], ['Commercial investigation', 0.85, '42%', 'Best, reviews, comparison.'], ['Informational', 0.35, '26%', 'Energy class, size, installation.'], ['Navigational / brand', 0.20, '5%', 'Brand terms.']],
+        funnel: [['Raw keyword demand', '100%', 'Appliance category query universe.'], ['Commercially relevant demand', '69%', 'Decent commercial potential.'], ['Addressable organic demand', '66%', 'SERP remains relatively clickable.'], ['Current captured clicks', '19%', 'Low capture due to ranking weakness.']],
+        clusters: [['Best appliances', 'Commercial investigation', 78, 'Outside Top 10.', 'Build buying guide and comparison templates.'], ['Appliance price', 'Transactional', 72, 'Weak category page optimization.', 'Improve title/meta, price modules and internal links.'], ['Energy class', 'Informational-commercial', 63, 'Missing support content.', 'Create guide content linked to category.'], ['Brand + category', 'Transactional', 60, 'Facet/content gaps.', 'Create selective landing pages.']],
+        leakageRows: [['Position distribution loss', 18], ['Ads / shopping modules', 5], ['SERP features', 3], ['AI / answer blocks', 1], ['Snippet mismatch', 1]],
+        serp: [['Paid ads', '54%', 'Moderate click diversion.', 'Use PPC only on high-margin clusters.'], ['Shopping/product modules', '48%', 'Moderate compression.', 'Improve product data consistency.'], ['Featured snippets / PAA', '33%', 'Guide opportunity.', 'Create concise educational sections.'], ['AI overview / generative block', '7%', 'Currently low impact.', 'Monitor but do not over-prioritize.']],
+        aiCards: [['AI visibility risk', 'Low', 'Most category opportunity is still classic ranking and content coverage.'], ['Citation opportunity', 'Moderate', 'Guides on energy class, size and selection can support enhanced visibility.'], ['Measurement rule', 'Low priority', 'Track AI features, but focus roadmap on ranking and category health first.']],
+        competitors: [['heureka.sk / appliances', 49, 18, '-2%', 'Medium'], ['publisher-a.sk', 66, 44, '+5%', 'High'], ['retailer-b.sk', 59, 33, '+1%', 'Medium'], ['competitor-c.sk', 55, 29, '+3%', 'Medium'], ['manufacturer domains', 42, 15, '-1%', 'Low']],
+        compChart: [49, 66, 59, 55, 42, 54], assetGaps: [['Buying guides', 'Publishers own guide SERPs.', 'Blocks commercial investigation capture.', 'Create guide templates.'], ['Category copy', 'Competitors explain selection criteria better.', 'Improves relevance and engagement.', 'Upgrade category content modules.'], ['Internal links', 'Weak path to subcategories.', 'Limits crawl and authority flow.', 'Improve hubs and breadcrumbs.'], ['Technical health', 'Competitors have cleaner category templates.', 'Technical friction blocks ranking.', 'Fix indexability and CWV.']],
+        businessFunnel: [['Impressions', '760,000', 'Moderate demand.'], ['Organic clicks', '38,400', 'Low current capture.'], ['Product detail / offer clicks', '9,600', 'Moderate engagement.'], ['Estimated SEO value', '€26,000', 'Moderate business value.']],
+        forecast: [['Conservative', '+4,100', '+€2,200', 'Move selected positions 11–20 to page one.'], ['Realistic', '+12,300', '+€6,700', 'Content + technical fixes.'], ['Aggressive', '+22,000', '+€12,100', 'Win Top 5 in multiple clusters.']],
+        roadmap: [['Fix category health foundations', 'High', 'Medium', 'Medium', 81, 'SEO + Engineering'], ['Create buying guide templates', 'High', 'Medium', 'Medium', 77, 'SEO + Content'], ['Improve internal linking to subcategories', 'Medium', 'Medium', 'Low', 73, 'SEO + UX'], ['Selective brand-category pages', 'Medium', 'Medium', 'Medium', 59, 'SEO + Product']]
+      }
+    };
+
+    const metricDocs = [
+      ['SEO Visibility', 'Estimates how much search demand the category captures from tracked keywords, adjusted by position, intent and SERP clickability.', 'Σ(Search Volume × CTR by Position × Intent Weight × SERP Availability Weight) ÷ Total Weighted Search Volume × 100', 'GSC, Semrush/Ahrefs/Sistrix, rank tracker, BigQuery, CTR benchmark table.', 'Use for category trend and competitor comparison, not as the only success KPI.'],
+      ['Commercial Intent Score', 'Measures whether category demand is close to money: transactional and comparison queries should weigh more than broad informational queries.', 'Σ(Keyword Demand × Intent Weight × Conversion Proxy) ÷ Σ(Keyword Demand) × 100', 'Keyword research tools, GSC queries, PPC search terms, internal search, GA4/BI conversion proxies.', 'Prioritize high-intent clusters first; do not let huge informational volume hijack the roadmap.'],
+      ['Category Health Score', 'Blended readiness score combining technical health, content coverage, internal linking, structured data and visibility stability.', '0.35×Technical Health + 0.25×Content Coverage + 0.20×Internal Linking + 0.10×Structured Data + 0.10×Visibility Stability', 'Crawler, GSC, logs, structured data validation, content inventory, BigQuery.', 'Use to separate “SEO potential” from “category is not ready to compete”.'],
+      ['SERP Feature Pressure', 'Measures how much the classic organic result is compressed by ads, shopping modules, local packs, snippets, AI summaries and other Google features.', 'Σ(Feature Presence × Feature Click Diversion Weight × Keyword Demand) ÷ Total Demand', 'Rank tracker SERP feature exports, manual SERP checks, SERP APIs where available.', 'High pressure means rankings alone may overestimate traffic potential.'],
+      ['CTR Leakage', 'Estimated difference between clicks expected from ranking position and clicks actually received after SERP features and snippet attractiveness are considered.', 'Expected Organic Clicks from Position − Actual Organic Clicks adjusted for SERP Features', 'GSC, CTR benchmark tables, rank tracker, SERP feature data, A/B title/meta tests.', 'Use to find where better snippets, SERP features or Top 3 growth can recover clicks.'],
+      ['AI / Google Feature Impact', 'Tracks whether AI Overviews, answer blocks, snippets and product modules are reducing clicks or creating citation/visibility opportunities.', 'Feature Impact = Feature Presence × Demand × Estimated Click Diversion or Citation Opportunity Weight', 'SERP monitoring, manual checks, AI feature tracking tools, GSC trend analysis.', 'Analyze by query cluster. Global AI impact averages are usually too vague for category SEO.'],
+      ['Competitor Momentum', 'Shows whether the selected category is gaining or losing visibility share compared with the SERP competitor set.', 'Current Visibility Share − Previous Period Visibility Share', 'Semrush/Ahrefs/Sistrix, rank tracker, GSC for owned domain, BigQuery.', 'Use to detect when competitors are winning due to content, technical, links or SERP feature ownership.'],
+      ['Business Impact', 'Connects SEO visibility and clicks with commercial value: revenue, product clicks, leads, offer clicks or other marketplace conversion proxies.', 'Organic Sessions × Category Conversion Rate × Average Value × Attribution Weight', 'GA4, internal BI, product click data, CRM/lead data, revenue/margin tables.', 'Use to prioritize SEO work by business value, not just keyword volume.'],
+      ['SEO Opportunity Score', 'Executive prioritization score showing whether this category deserves immediate SEO focus.', '0.25×Visibility Gap + 0.20×Commercial Intent + 0.15×Business Value + 0.15×CTR Recovery + 0.10×Competitor Weakness + 0.10×Category Health + 0.05×AI Opportunity', 'Calculated in BI/warehouse from SEO, SERP and business sources.', 'Use for comparing categories against each other and building a category SEO roadmap.'],
+      ['Roadmap Priority', 'Ranks initiatives by expected SEO and business impact relative to effort.', 'SEO Impact × Business Value × Confidence × Speed ÷ Effort', 'SEO diagnosis, BI data, Jira estimates, engineering input.', 'Use for execution planning with SEO, product, content, BI and engineering teams.']
+    ];
+
+    function statusClass(v) {
+      if (typeof v === 'string') return 'info';
+      if (v >= 75) return 'good';
+      if (v >= 55) return 'warn';
+      return 'bad';
+    }
+    function pressureClass(text) {
+      if (text === 'Very High' || text === 'High') return 'bad';
+      if (text === 'Medium') return 'warn';
+      return 'good';
+    }
+    function euro(v) { return '€' + Math.round(v / 1000) + 'k'; }
+    function adjust(v) {
+      const s = Number(document.getElementById('strictnessRange').value);
+      if (typeof v !== 'number') return v;
+      if (s === 1) return Math.min(100, Math.round(v + 3));
+      if (s === 3) return Math.max(0, Math.round(v - 4));
+      return v;
+    }
+    function getData() { return datasets[document.getElementById('categorySelect').value]; }
+
+    function renderBars(containerId, values, labels) {
+      const max = Math.max(...values, 100);
+      document.getElementById(containerId).innerHTML = values.map((v, i) => `<div class="chart-bar" style="height:${Math.max(8, v / max * 230)}px"><span>${labels ? labels[i] + ': ' : ''}${v}</span></div>`).join('');
+    }
+
+    function render() {
+      const d = getData();
+      const visibility = adjust(d.visibility), intent = adjust(d.intent), health = adjust(d.health), opportunity = adjust(d.opportunity);
+      document.getElementById('kpiVisibility').textContent = visibility;
+      document.getElementById('kpiIntent').textContent = intent;
+      document.getElementById('kpiHealth').textContent = health;
+      document.getElementById('kpiSerpPressure').textContent = d.serpPressure;
+      document.getElementById('kpiLeakage').textContent = d.leakage + '%';
+      document.getElementById('kpiAiImpact').textContent = d.aiImpact;
+      document.getElementById('kpiMomentum').textContent = (d.momentum > 0 ? '+' : '') + d.momentum + '%';
+      document.getElementById('kpiRevenue').textContent = euro(d.revenue);
+      document.getElementById('opportunityScore').textContent = opportunity;
+      document.getElementById('executiveDiagnosis').textContent = d.diagnosis;
+
+      const deg = Math.round(opportunity * 3.6);
+      let color = 'var(--green)';
+      if (opportunity < 75 && opportunity >= 55) color = 'var(--amber)';
+      if (opportunity < 55) color = 'var(--red)';
+      document.getElementById('opportunityDonut').style.background = `conic-gradient(${color} 0deg, ${color} ${deg}deg, #e2e8f0 ${deg}deg, #e2e8f0 360deg)`;
+
+      document.getElementById('scoreDrivers').innerHTML = d.drivers.map(([name, value]) => `<div class="bar-row"><div>${name}</div><div class="bar-bg"><div class="bar-fill" style="width:${adjust(value)}%"></div></div><div>${adjust(value)}</div></div>`).join('');
+      document.getElementById('executiveRisks').innerHTML = d.risks.map(([title, text, score, cls]) => `<div class="priority-card"><div><h3>${title}</h3><p>${text}</p></div><div class="priority-score ${cls}">${score}</div></div>`).join('');
+      document.getElementById('topKpiTable').innerHTML = d.topKpis.map(row => `<tr>${row.map((x, i) => i === 0 ? `<td class="metric-name">${x}</td>` : `<td>${x}</td>`).join('')}</tr>`).join('');
+
+      renderBars('visibilityChart', d.trend, null);
+      document.getElementById('rankTable').innerHTML = d.ranks.map(([bucket, kw, share, meaning]) => `<tr><td class="metric-name">${bucket}</td><td>${kw}</td><td>${share}</td><td>${meaning}</td></tr>`).join('');
+      document.getElementById('gapTable').innerHTML = d.gaps.map(([cluster, demand, pos, leader, gap, action]) => `<tr><td class="metric-name">${cluster}</td><td>${demand}</td><td>${pos}</td><td>${leader}</td><td><span class="status-pill ${gap === 'Large' || gap === 'High' ? 'bad' : 'warn'}"><span class="dot"></span>${gap}</span></td><td>${action}</td></tr>`).join('');
+
+      document.getElementById('intentTable').innerHTML = d.intents.map(([type, weight, share, role]) => `<tr><td class="metric-name">${type}</td><td>${weight}</td><td>${share}</td><td>${role}</td></tr>`).join('');
+      document.getElementById('intentFunnel').innerHTML = d.funnel.map(([name, value, desc]) => `<div class="funnel-step"><div class="metric-name">${name}</div><div><div class="bar-bg"><div class="bar-fill" style="width:${parseInt(value)}%"></div></div><div class="small" style="margin-top:6px">${desc}</div></div><div>${value}</div></div>`).join('');
+      document.getElementById('clusterTable').innerHTML = d.clusters.map(([cluster, intent, score, problem, action]) => `<tr><td class="metric-name">${cluster}</td><td>${intent}</td><td><span class="status-pill ${statusClass(score)}"><span class="dot"></span>${score}</span></td><td>${problem}</td><td>${action}</td></tr>`).join('');
+
+      document.getElementById('leakageRows').innerHTML = d.leakageRows.map(([name, value]) => `<div class="leakage-row"><div>${name}</div><div class="bar-bg"><div class="bar-fill" style="width:${value * 2}%"></div></div><div>${value}%</div></div>`).join('');
+      document.getElementById('serpTable').innerHTML = d.serp.map(([feature, presence, impact, action]) => `<tr><td class="metric-name">${feature}</td><td>${presence}</td><td>${impact}</td><td>${action}</td></tr>`).join('');
+      document.getElementById('aiCards').innerHTML = d.aiCards.map(([title, level, text]) => `<div class="impact-card"><h3>${title}</h3><p><span class="status-pill ${pressureClass(level)}"><span class="dot"></span>${level}</span></p><p style="margin-top:10px">${text}</p></div>`).join('');
+
+      document.getElementById('competitorTable').innerHTML = d.competitors.map(([domain, vis, top3, change, threat], i) => `<tr><td class="metric-name">${domain}</td><td>${vis}</td><td>${top3}</td><td>${change}</td><td><span class="status-pill ${pressureClass(threat)}"><span class="dot"></span>${threat}</span></td></tr>`).join('');
+      renderBars('competitorChart', d.compChart, ['Us','A','B','C','D','Mkt']);
+      document.getElementById('assetGapTable').innerHTML = d.assetGaps.map(row => `<tr>${row.map((x, i) => i === 0 ? `<td class="metric-name">${x}</td>` : `<td>${x}</td>`).join('')}</tr>`).join('');
+
+      document.getElementById('businessFunnel').innerHTML = d.businessFunnel.map(([name, value, desc], i) => `<div class="funnel-step"><div class="metric-name">${name}</div><div><div class="bar-bg"><div class="bar-fill" style="width:${[100,70,42,30][i]}%"></div></div><div class="small" style="margin-top:6px">${desc}</div></div><div>${value}</div></div>`).join('');
+      document.getElementById('forecastTable').innerHTML = d.forecast.map(row => `<tr>${row.map((x, i) => i === 0 ? `<td class="metric-name">${x}</td>` : `<td>${x}</td>`).join('')}</tr>`).join('');
+      document.getElementById('roadmapTable').innerHTML = d.roadmap.map(([initiative, seo, value, effort, priority, owner]) => `<tr><td class="metric-name">${initiative}</td><td>${seo}</td><td>${value}</td><td>${effort}</td><td><span class="status-pill ${statusClass(priority)}"><span class="dot"></span>${priority}</span></td><td>${owner}</td></tr>`).join('');
+    }
+
+    function renderMetricDocs() {
+      document.getElementById('metricAccordion').innerHTML = metricDocs.map(([name, meaning, formula, tools, recommendation], i) => `<div class="accordion-item ${i === 0 ? 'open' : ''}"><button class="accordion-button" type="button"><span>${name}</span><span>+</span></button><div class="accordion-content"><p><strong>Meaning:</strong> ${meaning}</p><div class="formula-box">${formula}</div><p><strong>Tools:</strong> ${tools}</p><p><strong>Recommendation:</strong> ${recommendation}</p></div></div>`).join('');
+    }
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.tab).classList.add('active');
+      });
+    });
+
+    document.addEventListener('click', e => {
+      const btn = e.target.closest('.accordion-button');
+      if (!btn) return;
+      btn.closest('.accordion-item').classList.toggle('open');
+    });
+
+    ['categorySelect', 'marketSelect', 'deviceSelect', 'periodSelect'].forEach(id => document.getElementById(id).addEventListener('change', render));
+    document.getElementById('strictnessRange').addEventListener('input', e => {
+      document.getElementById('strictnessLabel').textContent = {1:'Lenient',2:'Balanced',3:'Strict'}[e.target.value];
+      render();
+    });
+
+    renderMetricDocs();
+    render();
+  </script>
+</body>
+</html>

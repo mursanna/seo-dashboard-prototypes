@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="robots" content="noindex, nofollow">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SEO Dashboard Lab</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Inter, Arial, sans-serif;
+      background: #f8fafc;
+      color: #0f172a;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #020617, #0f172a);
+      color: white;
+      padding: 48px 28px;
+    }
+
+    .hero-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: 44px;
+      letter-spacing: -0.04em;
+    }
+
+    p {
+      color: #64748b;
+      line-height: 1.6;
+    }
+
+    .hero p {
+      color: #cbd5e1;
+      max-width: 760px;
+    }
+
+    .shell {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 32px 28px 60px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .card {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 20px;
+      padding: 22px;
+      box-shadow: 0 18px 44px rgba(15, 23, 42, 0.08);
+      text-decoration: none;
+      color: #0f172a;
+      transition: 0.18s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 24px 54px rgba(15, 23, 42, 0.13);
+    }
+
+    .card h2 {
+      margin: 0 0 8px;
+      font-size: 20px;
+      letter-spacing: -0.03em;
+    }
+
+    .tag {
+      display: inline-block;
+      margin-top: 14px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #eff6ff;
+      color: #2563eb;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    @media (max-width: 800px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      h1 {
+        font-size: 34px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-inner">
+      <h1>SEO Dashboard Lab</h1>
+      <p>
+        Interactive HTML prototypes for category-level SEO analysis, technical SEO health,
+        CTR leakage, SERP features, competitors and business impact.
+      </p>
+    </div>
+  </header>
+
+  <main class="shell">
+    <div class="grid">
+      <a class="card" href="technical-seo-health.html">
+        <h2>Technical SEO Health</h2>
+        <p>Category-level technical SEO health, crawlability, indexability, CWV and prioritization.</p>
+        <span class="tag">Technical SEO</span>
+      </a>
+
+      <a class="card" href="seo-category-performance.html">
+        <h2>Category SEO Performance</h2>
+        <p>Visibility, commercial intent, SERP features, competitors and business impact.</p>
+        <span class="tag">Category SEO</span>
+      </a>
+
+      <a class="card" href="ctr-leakage-analysis.html">
+        <h2>CTR Leakage Analysis</h2>
+        <p>Explains why rankings grow but traffic does not grow proportionally.</p>
+        <span class="tag">CTR / SERP</span>
+      </a>
+    </div>
+  </main>
+</body>
+</html>

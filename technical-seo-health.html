@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="robots" content="noindex, nofollow">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Technical SEO Health Metric Dashboard</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --panel-2: #1f2937;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --soft: #f1f5f9;
+      --line: #e2e8f0;
+      --good: #16a34a;
+      --warn: #f59e0b;
+      --bad: #dc2626;
+      --blue: #2563eb;
+      --purple: #7c3aed;
+      --cyan: #0891b2;
+      --shadow: 0 20px 50px rgba(15, 23, 42, 0.12);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f8fafc;
+      color: var(--text);
+      line-height: 1.45;
+    }
+
+    .hero {
+      background: radial-gradient(circle at top left, #334155 0, #0f172a 42%, #020617 100%);
+      color: white;
+      padding: 34px 28px 30px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .hero-inner {
+      max-width: 1440px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.65fr);
+      gap: 28px;
+      align-items: end;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 999px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: #cbd5e1;
+      background: rgba(255,255,255,0.04);
+    }
+
+    h1 {
+      margin: 16px 0 10px;
+      font-size: clamp(32px, 4vw, 56px);
+      line-height: 1.02;
+      letter-spacing: -0.04em;
+    }
+
+    .hero p {
+      margin: 0;
+      color: #cbd5e1;
+      max-width: 900px;
+      font-size: 16px;
+    }
+
+    .hero-note {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: var(--radius);
+      padding: 18px;
+      box-shadow: 0 10px 35px rgba(0,0,0,0.22);
+    }
+
+    .hero-note strong { color: white; }
+    .hero-note span { color: #cbd5e1; font-size: 14px; }
+
+    .shell {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 24px 28px 60px;
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(160px, 1fr));
+      gap: 14px;
+      margin-top: -4px;
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: 7px;
+    }
+
+    select, input[type="range"] {
+      width: 100%;
+    }
+
+    select {
+      appearance: none;
+      border: 1px solid var(--line);
+      background: white;
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-size: 14px;
+      color: var(--text);
+      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
+    }
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin: 16px 0 22px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      padding: 12px 0;
+      background: rgba(248,250,252,0.92);
+      backdrop-filter: blur(14px);
+    }
+
+    .tab-btn {
+      border: 1px solid var(--line);
+      background: white;
+      color: #334155;
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+      transition: all .18s ease;
+    }
+
+    .tab-btn:hover { transform: translateY(-1px); }
+    .tab-btn.active {
+      background: #0f172a;
+      color: white;
+      border-color: #0f172a;
+    }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .grid {
+      display: grid;
+      gap: 18px;
+    }
+
+    .grid.kpis {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      margin-bottom: 18px;
+    }
+
+    .grid.two { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+    .grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .grid.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+    .card {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px;
+    }
+
+    .card.compact { padding: 16px; }
+
+    .kpi {
+      position: relative;
+      overflow: hidden;
+      min-height: 146px;
+    }
+
+    .kpi:after {
+      content: "";
+      position: absolute;
+      width: 120px;
+      height: 120px;
+      right: -46px;
+      bottom: -52px;
+      border-radius: 50%;
+      background: rgba(37, 99, 235, 0.10);
+    }
+
+    .kpi-title {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: 8px;
+    }
+
+    .kpi-value {
+      font-size: 30px;
+      line-height: 1;
+      font-weight: 900;
+      letter-spacing: -0.05em;
+      margin-bottom: 10px;
+    }
+
+    .kpi-foot {
+      color: var(--muted);
+      font-size: 13px;
+      max-width: 180px;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 9px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .good { color: var(--good); background: rgba(22,163,74,.10); }
+    .warn { color: var(--warn); background: rgba(245,158,11,.12); }
+    .bad { color: var(--bad); background: rgba(220,38,38,.10); }
+    .info { color: var(--blue); background: rgba(37,99,235,.10); }
+
+    .section-title {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 18px;
+      margin: 28px 0 14px;
+    }
+
+    .section-title h2 {
+      margin: 0;
+      font-size: 26px;
+      letter-spacing: -0.035em;
+    }
+
+    .section-title p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      max-width: 900px;
+    }
+
+    .score-wrap {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 22px;
+      align-items: center;
+    }
+
+    .donut {
+      width: 230px;
+      height: 230px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      margin: 0 auto;
+      background: conic-gradient(var(--good) 0deg, var(--good) 263deg, #e2e8f0 263deg, #e2e8f0 360deg);
+      position: relative;
+    }
+
+    .donut:before {
+      content: "";
+      position: absolute;
+      width: 164px;
+      height: 164px;
+      background: white;
+      border-radius: 50%;
+      box-shadow: inset 0 0 0 1px var(--line);
+    }
+
+    .donut-inner {
+      position: relative;
+      text-align: center;
+    }
+
+    .donut-inner strong {
+      display: block;
+      font-size: 54px;
+      line-height: .95;
+      letter-spacing: -0.06em;
+    }
+
+    .donut-inner span { color: var(--muted); font-weight: 700; }
+
+    .formula-box {
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      margin: 12px 0;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 13px;
+      color: #334155;
+      overflow-x: auto;
+    }
+
+    .formula-box strong { color: #0f172a; }
+
+    .weights {
+      display: grid;
+      gap: 10px;
+    }
+
+    .weight-row {
+      display: grid;
+      grid-template-columns: 190px 1fr 52px;
+      gap: 12px;
+      align-items: center;
+      font-size: 13px;
+    }
+
+    .bar-bg {
+      height: 10px;
+      background: #e2e8f0;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .bar {
+      height: 100%;
+      width: 50%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--blue), var(--cyan));
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th, td {
+      text-align: left;
+      border-bottom: 1px solid var(--line);
+      padding: 12px 10px;
+      vertical-align: top;
+    }
+
+    th {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--muted);
+      background: #f8fafc;
+    }
+
+    tr:last-child td { border-bottom: 0; }
+
+    .metric-name { font-weight: 850; }
+    .small { font-size: 12px; color: var(--muted); }
+
+    .risk-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .risk-item {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      background: #ffffff;
+    }
+
+    .risk-item h3 {
+      margin: 0 0 6px;
+      font-size: 16px;
+    }
+
+    .risk-item p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .risk-score {
+      min-width: 86px;
+      text-align: center;
+      border-radius: 13px;
+      padding: 10px;
+      background: #f8fafc;
+      font-weight: 900;
+      font-size: 22px;
+      letter-spacing: -0.04em;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 12px 0 0;
+    }
+
+    .legend span {
+      display: inline-flex;
+      gap: 7px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .matrix {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+
+    .matrix .step {
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px;
+      min-height: 180px;
+    }
+
+    .step-no {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      background: #0f172a;
+      color: white;
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      margin-bottom: 12px;
+    }
+
+    .step h3 { margin: 0 0 8px; font-size: 16px; }
+    .step p { margin: 0; color: var(--muted); font-size: 13px; }
+
+    .callout {
+      background: linear-gradient(135deg, #eff6ff, #f5f3ff);
+      border: 1px solid #dbeafe;
+      border-radius: var(--radius);
+      padding: 18px;
+    }
+
+    .callout h3 { margin: 0 0 8px; }
+    .callout p { margin: 0; color: #475569; }
+
+    .toggle-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 10px 0 0;
+    }
+
+    .chip {
+      border: 1px solid var(--line);
+      background: #f8fafc;
+      padding: 8px 10px;
+      border-radius: 999px;
+      cursor: pointer;
+      color: #334155;
+      font-weight: 750;
+      font-size: 12px;
+    }
+
+    .chip.active {
+      background: #0f172a;
+      color: white;
+      border-color: #0f172a;
+    }
+
+    .hidden { display: none; }
+
+    .accordion {
+      display: grid;
+      gap: 10px;
+    }
+
+    .accordion-item {
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      overflow: hidden;
+      background: white;
+    }
+
+    .accordion-button {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      border: 0;
+      background: white;
+      cursor: pointer;
+      padding: 15px 16px;
+      font-weight: 850;
+      color: #0f172a;
+      text-align: left;
+    }
+
+    .accordion-content {
+      display: none;
+      padding: 0 16px 16px;
+      color: #475569;
+      font-size: 14px;
+    }
+
+    .accordion-item.open .accordion-content { display: block; }
+
+    .stack-map {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .stack-card {
+      border: 1px solid var(--line);
+      background: #f8fafc;
+      border-radius: 16px;
+      padding: 14px;
+    }
+
+    .stack-card h3 { margin: 0 0 8px; font-size: 15px; }
+    .stack-card ul { margin: 0; padding-left: 18px; color: var(--muted); font-size: 13px; }
+    .stack-card li { margin-bottom: 5px; }
+
+    .footer {
+      margin-top: 28px;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+    }
+
+    @media (max-width: 1180px) {
+      .grid.kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .grid.four, .matrix, .stack-map { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .hero-inner, .score-wrap { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 780px) {
+      .toolbar, .grid.two, .grid.three, .grid.four, .matrix, .stack-map, .grid.kpis { grid-template-columns: 1fr; }
+      .shell { padding: 18px 14px 40px; }
+      .hero { padding: 28px 16px; }
+      .tabs { position: relative; }
+      .weight-row { grid-template-columns: 1fr; gap: 6px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-inner">
+      <div>
+        <div class="eyebrow">Enterprise ecommerce · Category-level technical SEO</div>
+        <h1>Technical SEO Health Metric Dashboard</h1>
+        <p>
+          A working dashboard logic for evaluating technical SEO health of one enterprise ecommerce category, such as <strong>heureka.sk / pneumatiky</strong>. It combines crawl data, Google Search Console, server logs, Core Web Vitals, structured data, internal links and business impact into one prioritization model.
+        </p>
+      </div>
+      <div class="hero-note">
+        <strong>Purpose</strong><br />
+        <span>Use this as a category-level diagnostic framework, not as a vanity report. The goal is to answer: “Can Google discover, crawl, render, index, understand and rank this category efficiently — and where is technical debt blocking organic growth?”</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section class="toolbar card">
+      <div>
+        <label for="categorySelect">Category scope</label>
+        <select id="categorySelect">
+          <option value="tires">Pneumatiky / Tires</option>
+          <option value="phones">Mobile phones</option>
+          <option value="fridges">Refrigerators</option>
+        </select>
+      </div>
+      <div>
+        <label for="deviceSelect">Device</label>
+        <select id="deviceSelect">
+          <option value="mobile">Mobile</option>
+          <option value="desktop">Desktop</option>
+        </select>
+      </div>
+      <div>
+        <label for="periodSelect">Analysis window</label>
+        <select id="periodSelect">
+          <option value="28">Last 28 days</option>
+          <option value="90">Last 90 days</option>
+          <option value="180">Last 180 days</option>
+        </select>
+      </div>
+      <div>
+        <label for="strictnessRange">Scoring strictness: <span id="strictnessLabel">Balanced</span></label>
+        <input id="strictnessRange" type="range" min="1" max="3" value="2" />
+      </div>
+    </section>
+
+    <nav class="tabs" aria-label="Dashboard sections">
+      <button class="tab-btn active" data-tab="overview">Overview</button>
+      <button class="tab-btn" data-tab="diagnostics">Diagnostics</button>
+      <button class="tab-btn" data-tab="framework">Analysis framework</button>
+      <button class="tab-btn" data-tab="metrics">Metric dictionary</button>
+      <button class="tab-btn" data-tab="stack">Data stack</button>
+      <button class="tab-btn" data-tab="recommendations">Recommendations</button>
+    </nav>
+
+    <section id="overview" class="tab-panel active">
+      <div class="grid kpis">
+        <article class="card kpi">
+          <div class="kpi-title">Technical Health Score</div>
+          <div class="kpi-value" id="kpiScore">73</div>
+          <div id="kpiScoreStatus" class="status-pill warn"><span class="dot"></span>Needs work</div>
+          <div class="kpi-foot">Weighted score from 8 technical dimensions.</div>
+        </article>
+        <article class="card kpi">
+          <div class="kpi-title">Indexable Coverage</div>
+          <div class="kpi-value" id="kpiIndexable">84%</div>
+          <div class="kpi-foot">Valid, canonical, indexable URLs inside the category universe.</div>
+        </article>
+        <article class="card kpi">
+          <div class="kpi-title">Crawl Efficiency</div>
+          <div class="kpi-value" id="kpiCrawl">68%</div>
+          <div class="kpi-foot">Share of Googlebot hits spent on valuable canonical URLs.</div>
+        </article>
+        <article class="card kpi">
+          <div class="kpi-title">Canonical Consistency</div>
+          <div class="kpi-value" id="kpiCanonical">91%</div>
+          <div class="kpi-foot">Self-canonical indexable pages without conflicting signals.</div>
+        </article>
+        <article class="card kpi">
+          <div class="kpi-title">CWV Good URL Groups</div>
+          <div class="kpi-value" id="kpiCwv">57%</div>
+          <div class="kpi-foot">Field-data URL groups passing LCP, INP and CLS.</div>
+        </article>
+        <article class="card kpi">
+          <div class="kpi-title">Priority Risk</div>
+          <div class="kpi-value" id="kpiRisk">High</div>
+          <div class="kpi-foot">Business-weighted technical risk for organic growth.</div>
+        </article>
+      </div>
+
+      <div class="grid two">
+        <article class="card">
+          <div class="section-title" style="margin-top:0">
+            <div>
+              <h2>Health score model</h2>
+              <p>The dashboard converts multiple technical signals into a single category health score. The score is useful for trend monitoring, but the diagnosis below tells you what to fix.</p>
+            </div>
+          </div>
+          <div class="score-wrap">
+            <div>
+              <div class="donut" id="healthDonut">
+                <div class="donut-inner">
+                  <strong id="donutScore">73</strong>
+                  <span>/ 100</span>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="formula-box">
+                <strong>Technical Health Score</strong> =<br />
+                0.22 × Indexability + 0.18 × Crawlability + 0.15 × Canonicalization + 0.15 × Core Web Vitals + 0.10 × Structured Data + 0.08 × Internal Linking + 0.07 × Content Uniqueness + 0.05 × Sitemap Hygiene
+              </div>
+              <div class="weights" id="weightsContainer"></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="section-title" style="margin-top:0">
+            <div>
+              <h2>Executive interpretation</h2>
+              <p id="execSummary">This category has acceptable indexability and canonical control, but crawl waste and weak Core Web Vitals reduce scalability.</p>
+            </div>
+          </div>
+          <div class="risk-list" id="riskList"></div>
+        </article>
+      </div>
+
+      <div class="section-title">
+        <div>
+          <h2>Technical health by dimension</h2>
+          <p>Use this table to separate symptoms from root causes. A single score hides too much; enterprise ecommerce needs dimension-level diagnosis.</p>
+        </div>
+      </div>
+      <div class="card">
+        <table>
+          <thead>
+            <tr>
+              <th>Dimension</th>
+              <th>Score</th>
+              <th>What it means</th>
+              <th>Primary data source</th>
+              <th>Action threshold</th>
+            </tr>
+          </thead>
+          <tbody id="dimensionTable"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="diagnostics" class="tab-panel">
+      <div class="section-title">
+        <div>
+          <h2>Diagnostic modules</h2>
+          <p>Each module answers a concrete technical SEO question for the selected category. This is the part that usually becomes a Looker Studio or Power BI dashboard connected to BigQuery.</p>
+        </div>
+      </div>
+
+      <div class="grid two">
+        <article class="card">
+          <h2>1. URL inventory and indexability</h2>
+          <div class="formula-box">Indexable Coverage = Valid indexable canonical URLs ÷ Total canonical category URLs × 100</div>
+          <table>
+            <thead><tr><th>Segment</th><th>URLs</th><th>Share</th><th>Diagnosis</th></tr></thead>
+            <tbody id="inventoryTable"></tbody>
+          </table>
+        </article>
+
+        <article class="card">
+          <h2>2. Crawl efficiency from logs</h2>
+          <div class="formula-box">Crawl Efficiency = Googlebot hits on indexable canonical URLs ÷ Total Googlebot hits in category universe × 100</div>
+          <table>
+            <thead><tr><th>Googlebot destination</th><th>Hits</th><th>Share</th><th>Meaning</th></tr></thead>
+            <tbody id="crawlTable"></tbody>
+          </table>
+        </article>
+
+        <article class="card">
+          <h2>3. Faceted navigation control</h2>
+          <div class="formula-box">Facet Waste Rate = Crawlable low-value facet URLs ÷ All discovered facet URLs × 100</div>
+          <p class="small">For ecommerce categories, filters can create millions of combinations. The question is not “are filters useful?” They are. The question is “which filtered URLs deserve indexation?”</p>
+          <table>
+            <thead><tr><th>Facet type</th><th>Policy</th><th>SEO role</th><th>Risk</th></tr></thead>
+            <tbody>
+              <tr><td class="metric-name">Brand + category</td><td>Indexable if search demand exists</td><td>Commercial landing pages</td><td><span class="status-pill good"><span class="dot"></span>Useful</span></td></tr>
+              <tr><td class="metric-name">Size / parameter with demand</td><td>Indexable selectively</td><td>Long-tail category pages</td><td><span class="status-pill info"><span class="dot"></span>Selective</span></td></tr>
+              <tr><td class="metric-name">Sorting, view, session IDs</td><td>Noindex / canonical / parameter handling</td><td>No independent SEO value</td><td><span class="status-pill bad"><span class="dot"></span>Waste</span></td></tr>
+              <tr><td class="metric-name">Multi-select combinations</td><td>Usually non-indexable</td><td>UX only</td><td><span class="status-pill warn"><span class="dot"></span>Explosion</span></td></tr>
+            </tbody>
+          </table>
+        </article>
+
+        <article class="card">
+          <h2>4. Core Web Vitals and rendering</h2>
+          <div class="formula-box">CWV Pass Rate = Good URL groups ÷ URL groups with field data × 100</div>
+          <table>
+            <thead><tr><th>Metric</th><th>Good threshold</th><th>Category-page issue examples</th><th>Tool</th></tr></thead>
+            <tbody>
+              <tr><td class="metric-name">LCP</td><td>≤ 2.5s</td><td>Hero image, above-the-fold product grid, heavy JS</td><td>CrUX, PSI, GSC CWV</td></tr>
+              <tr><td class="metric-name">INP</td><td>≤ 200ms</td><td>Filter interaction, sorting, comparison widgets, scripts</td><td>CrUX, RUM, PSI</td></tr>
+              <tr><td class="metric-name">CLS</td><td>≤ 0.1</td><td>Ads, lazy-loaded images without dimensions, injected banners</td><td>CrUX, PSI, RUM</td></tr>
+            </tbody>
+          </table>
+        </article>
+      </div>
+
+      <div class="section-title">
+        <div>
+          <h2>Issue prioritization queue</h2>
+          <p>Prioritize by business impact, affected URL volume, organic demand and implementation effort — not by whoever shouted last in Slack.</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="formula-box">Priority Score = (Business Weight × Technical Impact × Affected URLs Score × Organic Demand Score) ÷ Implementation Effort</div>
+        <table>
+          <thead>
+            <tr><th>Issue</th><th>Affected URLs</th><th>Impact</th><th>Effort</th><th>Priority score</th><th>Recommended owner</th></tr>
+          </thead>
+          <tbody id="priorityTable"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="framework" class="tab-panel">
+      <div class="section-title">
+        <div>
+          <h2>Step-by-step technical SEO analysis framework</h2>
+          <p>This workflow is designed for one exact enterprise ecommerce category. Repeat it by category, then compare categories to find systemic platform problems.</p>
+        </div>
+      </div>
+
+      <div class="matrix">
+        <div class="step"><div class="step-no">1</div><h3>Define category universe</h3><p>Collect all URLs belonging to the category: main landing page, paginated URLs, filter URLs, brand/category combinations, product listing pages, and historical URLs from GSC/logs.</p></div>
+        <div class="step"><div class="step-no">2</div><h3>Classify URL types</h3><p>Tag each URL as indexable category, strategic facet, UX-only facet, pagination, product, redirect, error, duplicate, parameter, or orphan.</p></div>
+        <div class="step"><div class="step-no">3</div><h3>Crawl like Googlebot</h3><p>Run JS and non-JS crawls, mobile user-agent crawl, sitemap crawl, list crawl from GSC exports, and compare discoverability gaps.</p></div>
+        <div class="step"><div class="step-no">4</div><h3>Join data sources</h3><p>Merge crawl data, GSC performance, index coverage, logs, GA4 revenue/conversions, CWV and internal BI data by normalized canonical URL.</p></div>
+        <div class="step"><div class="step-no">5</div><h3>Measure health metrics</h3><p>Calculate indexability, crawl efficiency, canonical consistency, sitemap hygiene, CWV pass rate, structured data validity and internal link depth.</p></div>
+        <div class="step"><div class="step-no">6</div><h3>Find root causes</h3><p>Separate issue symptoms from causes: template logic, parameter generation, JavaScript rendering, broken canonicals, poor linking, duplicate content, server errors.</p></div>
+        <div class="step"><div class="step-no">7</div><h3>Prioritize by business risk</h3><p>Score issues by affected organic landing pages, demand, revenue importance, crawl/index impact and implementation effort.</p></div>
+        <div class="step"><div class="step-no">8</div><h3>Track after release</h3><p>Monitor before/after movement in crawl behavior, indexed URLs, impressions, clicks, rankings, CWV and conversion metrics for at least 28–90 days.</p></div>
+      </div>
+
+      <div class="section-title">
+        <div>
+          <h2>Recommended workflow rhythm</h2>
+          <p>Enterprise SEO is not one audit PDF per year. It is a monitoring system with recurring diagnostics.</p>
+        </div>
+      </div>
+      <div class="grid three">
+        <div class="callout"><h3>Daily / automated</h3><p>5xx spikes, robots.txt changes, sitemap failures, noindex increases, canonical anomalies, crawl drops, template deployment alerts.</p></div>
+        <div class="callout"><h3>Weekly</h3><p>Category score trend, GSC clicks/impressions, crawl waste, top issue queue, CWV group changes, internal linking anomalies.</p></div>
+        <div class="callout"><h3>Monthly / quarterly</h3><p>Full category crawl, log-file analysis, facet indexation review, competitor technical comparison, platform-level technical debt roadmap.</p></div>
+      </div>
+    </section>
+
+    <section id="metrics" class="tab-panel">
+      <div class="section-title">
+        <div>
+          <h2>Metric dictionary: meanings, formulas, tools</h2>
+          <p>Use this dictionary to align SEO, BI, product and engineering teams. Without shared definitions, dashboards become decorative fog machines.</p>
+        </div>
+      </div>
+
+      <div class="accordion" id="metricAccordion"></div>
+    </section>
+
+    <section id="stack" class="tab-panel">
+      <div class="section-title">
+        <div>
+          <h2>Recommended data stack</h2>
+          <p>For an enterprise ecommerce category, Looker Studio can visualize the dashboard, but BigQuery or another warehouse should hold the joined URL-level data model.</p>
+        </div>
+      </div>
+
+      <div class="stack-map">
+        <div class="stack-card"><h3>1. Search data</h3><ul><li>Google Search Console API</li><li>URL Inspection API samples</li><li>GSC CWV report</li><li>Rank tracking / Semrush / Ahrefs</li></ul></div>
+        <div class="stack-card"><h3>2. Crawl data</h3><ul><li>Screaming Frog SEO Spider</li><li>Sitebulb / Botify / Oncrawl</li><li>XML sitemap exports</li><li>Rendered HTML extraction</li></ul></div>
+        <div class="stack-card"><h3>3. Log data</h3><ul><li>CDN logs</li><li>Server logs</li><li>Googlebot verification</li><li>Log analyzer pipeline</li></ul></div>
+        <div class="stack-card"><h3>4. Performance data</h3><ul><li>CrUX</li><li>PageSpeed Insights API</li><li>Real-user monitoring</li><li>Lighthouse for lab debugging</li></ul></div>
+        <div class="stack-card"><h3>5. Business data</h3><ul><li>GA4 / ecommerce events</li><li>Internal BI revenue</li><li>Margin / category priority</li><li>Product availability</li></ul></div>
+      </div>
+
+      <div class="section-title">
+        <div>
+          <h2>Data model for BigQuery / warehouse</h2>
+          <p>The key is a normalized canonical URL table. Everything else joins to it.</p>
+        </div>
+      </div>
+      <div class="card">
+        <table>
+          <thead><tr><th>Table</th><th>Grain</th><th>Core fields</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td class="metric-name">dim_url</td><td>1 row per canonical URL</td><td>url, canonical_url, category_id, url_type, index_policy, template, language</td><td>Master URL inventory and classification.</td></tr>
+            <tr><td class="metric-name">crawl_snapshot</td><td>URL × crawl date</td><td>status_code, indexability, canonical, h1, title, depth, inlinks, rendered_hash</td><td>Technical crawl diagnostics and trend checks.</td></tr>
+            <tr><td class="metric-name">gsc_performance</td><td>URL × query × date</td><td>clicks, impressions, ctr, avg_position, country, device</td><td>Organic demand and performance context.</td></tr>
+            <tr><td class="metric-name">log_googlebot</td><td>URL × date × bot type</td><td>hits, status_code, bytes, response_time, googlebot_type</td><td>Crawl demand, crawl waste and response health.</td></tr>
+            <tr><td class="metric-name">web_vitals</td><td>URL group × date × device</td><td>lcp_p75, inp_p75, cls_p75, cwv_status</td><td>Real-user page experience monitoring.</td></tr>
+            <tr><td class="metric-name">business_value</td><td>Category × period</td><td>revenue, conversion_rate, margin_weight, product_count, availability</td><td>Business-weighted prioritization.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="section-title">
+        <div>
+          <h2>Visualization layer</h2>
+        </div>
+      </div>
+      <div class="grid three">
+        <div class="card compact"><h3>Looker Studio</h3><p class="small">Good for stakeholder reporting, score trends, issue tables and filters by category, country, device and template.</p></div>
+        <div class="card compact"><h3>Power BI</h3><p class="small">Good if the company already uses Microsoft BI and needs stronger data modeling, permissions and executive reporting.</p></div>
+        <div class="card compact"><h3>Python notebooks</h3><p class="small">Good for ad hoc diagnostics: URL clustering, anomaly detection, log parsing, internal link graph analysis and before/after tests.</p></div>
+      </div>
+    </section>
+
+    <section id="recommendations" class="tab-panel">
+      <div class="section-title">
+        <div>
+          <h2>Recommendations for enterprise ecommerce category SEO</h2>
+          <p>Focus on scalable systems, not one-off page polishing. Category SEO dies quietly when filters, templates and indexation logic drift out of control.</p>
+        </div>
+      </div>
+      <div class="grid two">
+        <div class="card">
+          <h2>Immediate fixes</h2>
+          <table>
+            <thead><tr><th>Recommendation</th><th>Why it matters</th><th>Owner</th></tr></thead>
+            <tbody>
+              <tr><td class="metric-name">Create a canonical URL inventory for the category</td><td>Without the URL universe, every metric is partial and potentially misleading.</td><td>SEO + BI</td></tr>
+              <tr><td class="metric-name">Define indexation rules for facets</td><td>Prevents crawl waste and duplicate indexation while preserving strategic long-tail landing pages.</td><td>SEO + Product + Engineering</td></tr>
+              <tr><td class="metric-name">Fix sitemap to include only canonical 200 indexable URLs</td><td>Sitemaps should guide Google to valuable URLs, not become a landfill with XML formatting.</td><td>SEO + Engineering</td></tr>
+              <tr><td class="metric-name">Alert on noindex/canonical/template regressions</td><td>Enterprise deployments can break thousands of URLs at once.</td><td>Engineering + SEO</td></tr>
+              <tr><td class="metric-name">Optimize category template LCP and INP</td><td>Category pages often carry heavy filters, product grids and tracking scripts.</td><td>Frontend + Performance team</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card">
+          <h2>Strategic improvements</h2>
+          <table>
+            <thead><tr><th>Recommendation</th><th>Why it matters</th><th>Owner</th></tr></thead>
+            <tbody>
+              <tr><td class="metric-name">Build a category technical score trend</td><td>Turns technical SEO into an operational KPI rather than an occasional audit.</td><td>SEO + BI</td></tr>
+              <tr><td class="metric-name">Connect organic visibility to revenue/margin</td><td>Helps prioritize technical fixes by business value, not just SEO elegance.</td><td>SEO + BI + Category team</td></tr>
+              <tr><td class="metric-name">Create a facet demand model</td><td>Decides which brand/attribute combinations deserve landing pages based on demand and uniqueness.</td><td>SEO + Data</td></tr>
+              <tr><td class="metric-name">Monitor crawl budget by template</td><td>Identifies whether Googlebot spends time on strategic pages or parameter chaos.</td><td>SEO + Platform</td></tr>
+              <tr><td class="metric-name">Create release QA gates</td><td>Blocks technical regressions before they reach production.</td><td>Engineering + QA + SEO</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="section-title">
+        <div>
+          <h2>Definition of done for technical SEO fixes</h2>
+          <p>A fix is not done when Jira is closed. A fix is done when Google’s behavior and organic KPIs confirm it.</p>
+        </div>
+      </div>
+      <div class="grid four">
+        <div class="callout"><h3>Engineering done</h3><p>Code released, QA passed, production crawl confirms expected technical state.</p></div>
+        <div class="callout"><h3>Google discovery done</h3><p>Googlebot crawls updated URLs and no longer spends material crawl volume on the old problem.</p></div>
+        <div class="callout"><h3>Indexation done</h3><p>Index coverage and canonical selection reflect the intended URL policy.</p></div>
+        <div class="callout"><h3>Business done</h3><p>Relevant impressions, clicks, rankings, conversions or revenue trend in the expected direction.</p></div>
+      </div>
+    </section>
+
+    <div class="footer">Single-file prototype · Replace mock values with BigQuery / Looker Studio data sources in production.</div>
+  </main>
+
+  <script>
+    const data = {
+      tires: {
+        label: 'Pneumatiky / Tires',
+        score: 73,
+        indexable: 84,
+        crawl: 68,
+        canonical: 91,
+        cwv: 57,
+        structured: 82,
+        internal: 76,
+        uniqueness: 70,
+        sitemap: 88,
+        risk: 'High',
+        summary: 'The tires category has solid canonical control and sitemap hygiene, but crawl waste from low-value facets and weak mobile CWV reduce scalable organic growth.',
+        inventory: [
+          ['Canonical indexable category URLs', 8420, '84%', 'Primary organic landing page universe'],
+          ['Strategic facets', 980, '10%', 'Potential long-tail pages; validate demand and uniqueness'],
+          ['Noindex / canonicalized facets', 42100, '—', 'Expected for UX-only filter combinations'],
+          ['Errors / redirects / blocked URLs', 640, '6%', 'Needs cleanup if linked or present in sitemap']
+        ],
+        crawlRows: [
+          ['Indexable category URLs', 384200, '68%', 'Good crawl demand, but should be higher for priority category'],
+          ['Non-indexable facets', 113400, '20%', 'Crawl waste; check internal links and parameter rules'],
+          ['Redirects / 404 / soft 404', 36700, '7%', 'Technical debt from old URLs or unavailable pages'],
+          ['Product pages from category path', 28100, '5%', 'Expected, but compare with business value']
+        ],
+        risks: [
+          ['Facet crawl waste is too high', '20% of Googlebot activity goes to low-value filtered URLs. Tighten internal linking, canonicals, robots strategy and facet policies.', 86, 'bad'],
+          ['Mobile Core Web Vitals underperform', 'Only 57% of URL groups are Good. Category template likely needs LCP and INP work.', 78, 'warn'],
+          ['Internal depth is uneven', 'Some strategic category/facet pages sit too deep or receive weak contextual links.', 64, 'warn']
+        ],
+        priorities: [
+          ['Low-value facets are crawlable and internally linked', '42k', 'High', 'Medium', 86, 'SEO + Product + Engineering'],
+          ['Mobile INP poor on filter interactions', '8.4k', 'High', 'High', 74, 'Frontend + Performance'],
+          ['Sitemap includes redirected/out-of-stock category URLs', '640', 'Medium', 'Low', 69, 'SEO + Engineering'],
+          ['Strategic brand-size facets have weak internal links', '980', 'Medium', 'Medium', 61, 'SEO + UX']
+        ]
+      },
+      phones: {
+        label: 'Mobile phones',
+        score: 81,
+        indexable: 90,
+        crawl: 77,
+        canonical: 94,
+        cwv: 69,
+        structured: 88,
+        internal: 84,
+        uniqueness: 76,
+        sitemap: 93,
+        risk: 'Medium',
+        summary: 'The phones category is technically healthier. Main risks are performance, duplicated filter copy and crawl demand shifting toward parameterized pages during campaigns.',
+        inventory: [
+          ['Canonical indexable category URLs', 6200, '90%', 'Strong primary landing page universe'],
+          ['Strategic facets', 740, '11%', 'High commercial value if query demand exists'],
+          ['Noindex / canonicalized facets', 18200, '—', 'Mostly controlled'],
+          ['Errors / redirects / blocked URLs', 180, '3%', 'Low but should be monitored']
+        ],
+        crawlRows: [
+          ['Indexable category URLs', 305100, '77%', 'Healthy crawl allocation'],
+          ['Non-indexable facets', 56300, '14%', 'Acceptable but monitor campaign parameters'],
+          ['Redirects / 404 / soft 404', 14200, '4%', 'Manage old filter URLs'],
+          ['Product pages from category path', 19800, '5%', 'Expected discovery path']
+        ],
+        risks: [
+          ['Template speed limits ranking upside', 'Mobile LCP and INP should be improved before peak commercial periods.', 70, 'warn'],
+          ['Duplicate text across strategic facets', 'Many brand + parameter pages need differentiated intro text and stronger intent matching.', 58, 'warn'],
+          ['Campaign parameters create crawl noise', 'Marketing URLs should be canonicalized and excluded from internal crawl paths.', 52, 'info']
+        ],
+        priorities: [
+          ['Improve LCP on mobile category template', '6.2k', 'High', 'Medium', 75, 'Frontend + Performance'],
+          ['Differentiate strategic facet content', '740', 'Medium', 'Medium', 60, 'SEO + Content'],
+          ['Canonicalize campaign parameters', '2.1k', 'Medium', 'Low', 58, 'Engineering'],
+          ['Reduce redirect chains from old filters', '180', 'Low', 'Low', 42, 'Engineering']
+        ]
+      },
+      fridges: {
+        label: 'Refrigerators',
+        score: 66,
+        indexable: 78,
+        crawl: 55,
+        canonical: 84,
+        cwv: 49,
+        structured: 74,
+        internal: 68,
+        uniqueness: 62,
+        sitemap: 80,
+        risk: 'Very High',
+        summary: 'The refrigerators category has serious crawl efficiency and performance problems. Too many low-value filter URLs compete with the main category URL set.',
+        inventory: [
+          ['Canonical indexable category URLs', 3900, '78%', 'Core universe is acceptable but incomplete'],
+          ['Strategic facets', 410, '8%', 'Needs stronger demand validation'],
+          ['Noindex / canonicalized facets', 26400, '—', 'Large volume; control quality varies'],
+          ['Errors / redirects / blocked URLs', 1090, '14%', 'High cleanup priority']
+        ],
+        crawlRows: [
+          ['Indexable category URLs', 128400, '55%', 'Too low for a commercial category'],
+          ['Non-indexable facets', 69800, '30%', 'Severe crawl waste'],
+          ['Redirects / 404 / soft 404', 25600, '11%', 'Old URLs and unavailable inventory patterns'],
+          ['Product pages from category path', 8800, '4%', 'Expected but low']
+        ],
+        risks: [
+          ['Googlebot spends too much time on low-value URLs', '30% crawl waste can delay discovery of strategic category and product pages.', 92, 'bad'],
+          ['CWV is below acceptable level', 'Less than half of URL groups are Good. Heavy product grids and scripts likely hurt mobile users.', 84, 'bad'],
+          ['Sitemap and internal links disagree', 'Submitted URLs, crawlable links and canonical policy do not fully match.', 76, 'warn']
+        ],
+        priorities: [
+          ['Block or canonicalize low-value filter combinations', '26.4k', 'Very high', 'Medium', 92, 'SEO + Engineering'],
+          ['Fix mobile LCP/INP on category template', '3.9k', 'High', 'High', 81, 'Frontend + Performance'],
+          ['Clean sitemap errors and redirects', '1.1k', 'High', 'Low', 79, 'SEO + Engineering'],
+          ['Improve internal links to strategic facets', '410', 'Medium', 'Medium', 54, 'SEO + UX']
+        ]
+      }
+    };
+
+    const dimensions = [
+      ['Indexability', 'indexable', 'Can strategic category URLs be indexed and selected as canonical?', 'Crawl, GSC Indexing, URL Inspection samples', '< 85% needs investigation'],
+      ['Crawlability', 'crawl', 'Is Googlebot spending time on valuable URLs instead of parameter noise?', 'Server logs, CDN logs, GSC Crawl Stats', '< 75% indicates crawl waste'],
+      ['Canonicalization', 'canonical', 'Do canonicals, internal links, sitemap and rendered HTML point to the same preferred URL?', 'Crawl, rendered HTML, URL Inspection samples', '< 90% for priority category is risky'],
+      ['Core Web Vitals', 'cwv', 'Do real users experience acceptable loading, interaction and visual stability?', 'CrUX, GSC CWV, PSI API, RUM', '< 75% Good URL groups should be prioritized'],
+      ['Structured Data', 'structured', 'Can Google understand breadcrumbs, item lists and product/listing context?', 'Rich Results Test, schema extraction, crawl validation', '< 90% valid templates needs QA'],
+      ['Internal Linking', 'internal', 'Are important category and strategic facet URLs easy to discover and close to authority hubs?', 'Crawler, link graph, click depth, navigation data', '< 80% means authority flow is weak'],
+      ['Content Uniqueness', 'uniqueness', 'Are category/facet pages sufficiently distinct and aligned with query intent?', 'Crawl extraction, similarity checks, title/H1/meta duplication', '< 75% creates duplication risk'],
+      ['Sitemap Hygiene', 'sitemap', 'Do XML sitemaps include only clean 200 canonical indexable URLs?', 'Sitemap crawl, GSC sitemap data, status checks', '< 95% should be cleaned']
+    ];
+
+    const weights = [
+      ['Indexability', 22], ['Crawlability', 18], ['Canonicalization', 15], ['Core Web Vitals', 15], ['Structured Data', 10], ['Internal Linking', 8], ['Content Uniqueness', 7], ['Sitemap Hygiene', 5]
+    ];
+
+    const metrics = [
+      {
+        name: 'Technical Health Score',
+        meaning: 'A weighted summary of the category’s technical SEO readiness. It helps track trend direction, but it should never replace root-cause diagnosis.',
+        formula: '0.22×Indexability + 0.18×Crawlability + 0.15×Canonicalization + 0.15×CWV + 0.10×Structured Data + 0.08×Internal Linking + 0.07×Content Uniqueness + 0.05×Sitemap Hygiene',
+        tools: 'BigQuery, Looker Studio, Power BI, crawl tools, GSC API, logs, CrUX / PSI API.',
+        recommendation: 'Use it as a management KPI. For SEO work, always drill down into the individual dimensions.'
+      },
+      {
+        name: 'Indexable Coverage',
+        meaning: 'Shows how many URLs in the intended category universe are actually indexable, canonical and technically valid.',
+        formula: 'Valid indexable canonical category URLs ÷ Total canonical category URLs × 100',
+        tools: 'Screaming Frog, Sitebulb, GSC Indexing report, URL Inspection API samples, sitemap exports.',
+        recommendation: 'Investigate noindex, blocked resources, incorrect canonicals, redirect chains, 404s and template-level robots directives.'
+      },
+      {
+        name: 'Crawl Efficiency',
+        meaning: 'Measures whether Googlebot spends crawl demand on valuable category URLs instead of low-value filters, parameters, errors and redirects.',
+        formula: 'Googlebot hits on indexable canonical category URLs ÷ Total Googlebot hits in category URL universe × 100',
+        tools: 'Server logs, CDN logs, log analyzer, BigQuery, GSC Crawl Stats.',
+        recommendation: 'Reduce internally linked parameter URLs, fix redirects/errors, define facet policies and avoid sending mixed signals.'
+      },
+      {
+        name: 'Facet Waste Rate',
+        meaning: 'Shows how much of the faceted navigation space is crawlable despite having little or no independent search value.',
+        formula: 'Crawlable low-value facet URLs ÷ All discovered facet URLs × 100',
+        tools: 'Crawler with URL pattern extraction, log files, internal search/filter URL inventory.',
+        recommendation: 'Keep UX filters, but restrict indexation and crawl paths for combinations without search demand or unique value.'
+      },
+      {
+        name: 'Canonical Consistency',
+        meaning: 'Checks whether canonical tags, internal links, sitemaps, hreflang and redirects agree about the preferred URL.',
+        formula: 'URLs with self-consistent canonical signals ÷ Indexable category URLs × 100',
+        tools: 'Crawler, rendered HTML extraction, sitemap crawl, hreflang validation, URL Inspection samples.',
+        recommendation: 'Fix conflicting canonicals first on high-impression URLs and templates. Canonical chaos is not a growth strategy; it is a slow-motion traffic tax.'
+      },
+      {
+        name: 'Sitemap Hygiene',
+        meaning: 'Measures whether XML sitemaps contain only clean URLs that deserve crawling and indexing.',
+        formula: 'Submitted URLs that return 200 + indexable + canonical + not duplicated ÷ Submitted category URLs × 100',
+        tools: 'XML sitemap crawl, GSC Sitemap report, crawler list mode, BigQuery checks.',
+        recommendation: 'Remove redirects, 404s, noindex URLs, canonicalized URLs and low-value facets from sitemaps.'
+      },
+      {
+        name: 'Core Web Vitals Pass Rate',
+        meaning: 'Shows the share of URL groups with Good field data for LCP, INP and CLS.',
+        formula: 'Good URL groups ÷ URL groups with sufficient field data × 100',
+        tools: 'GSC Core Web Vitals report, CrUX, PageSpeed Insights API, real-user monitoring.',
+        recommendation: 'Prioritize the shared category template. One template fix can improve thousands of URLs.'
+      },
+      {
+        name: 'Internal Link Depth Health',
+        meaning: 'Measures whether strategic category and facet URLs are discoverable within a reasonable click depth and receive enough internal links.',
+        formula: 'Strategic URLs within target depth and inlink threshold ÷ Strategic category URLs × 100',
+        tools: 'Crawler link graph, navigation exports, internal module data, breadcrumbs.',
+        recommendation: 'Improve navigation, breadcrumbs, related-category modules, buying guides and contextual links from high-authority pages.'
+      },
+      {
+        name: 'Structured Data Validity',
+        meaning: 'Checks whether structured data is valid and consistent across category templates.',
+        formula: 'URLs with valid expected schema ÷ URLs where schema is expected × 100',
+        tools: 'Schema extraction via crawler, Rich Results Test, Search Console enhancements where available.',
+        recommendation: 'For category pages, prioritize BreadcrumbList and appropriate item/list markup. Avoid fake or misleading product markup.'
+      },
+      {
+        name: 'Technical Priority Score',
+        meaning: 'Ranks issues by business and SEO impact so teams can decide what to fix first.',
+        formula: '(Business Weight × Technical Impact × Affected URLs Score × Organic Demand Score) ÷ Implementation Effort',
+        tools: 'BigQuery, GSC, BI revenue data, crawl data, logs, Jira effort estimate.',
+        recommendation: 'Use for roadmap planning. High SEO impact with tiny revenue value may not beat medium SEO impact on a strategic money category.'
+      }
+    ];
+
+    function statusClass(value) {
+      if (value >= 80) return 'good';
+      if (value >= 65) return 'warn';
+      return 'bad';
+    }
+
+    function statusLabel(value) {
+      if (value >= 80) return 'Healthy';
+      if (value >= 65) return 'Needs work';
+      return 'Critical';
+    }
+
+    function adjustByStrictness(value) {
+      const strict = Number(document.getElementById('strictnessRange').value);
+      if (strict === 1) return Math.min(100, Math.round(value + 4));
+      if (strict === 3) return Math.max(0, Math.round(value - 5));
+      return value;
+    }
+
+    function render() {
+      const key = document.getElementById('categorySelect').value;
+      const item = data[key];
+      const score = adjustByStrictness(item.score);
+      const indexable = adjustByStrictness(item.indexable);
+      const crawl = adjustByStrictness(item.crawl);
+      const canonical = adjustByStrictness(item.canonical);
+      const cwv = adjustByStrictness(item.cwv);
+
+      document.getElementById('kpiScore').textContent = score;
+      document.getElementById('donutScore').textContent = score;
+      document.getElementById('kpiScoreStatus').className = 'status-pill ' + statusClass(score);
+      document.getElementById('kpiScoreStatus').innerHTML = '<span class="dot"></span>' + statusLabel(score);
+      document.getElementById('kpiIndexable').textContent = indexable + '%';
+      document.getElementById('kpiCrawl').textContent = crawl + '%';
+      document.getElementById('kpiCanonical').textContent = canonical + '%';
+      document.getElementById('kpiCwv').textContent = cwv + '%';
+      document.getElementById('kpiRisk').textContent = item.risk;
+      document.getElementById('execSummary').textContent = item.summary;
+
+      const degrees = Math.round(score * 3.6);
+      let color = 'var(--good)';
+      if (score < 80 && score >= 65) color = 'var(--warn)';
+      if (score < 65) color = 'var(--bad)';
+      document.getElementById('healthDonut').style.background = `conic-gradient(${color} 0deg, ${color} ${degrees}deg, #e2e8f0 ${degrees}deg, #e2e8f0 360deg)`;
+
+      document.getElementById('weightsContainer').innerHTML = weights.map(([label, value]) => `
+        <div class="weight-row">
+          <div>${label}</div>
+          <div class="bar-bg"><div class="bar" style="width:${value * 4}%"></div></div>
+          <div>${value}%</div>
+        </div>
+      `).join('');
+
+      document.getElementById('riskList').innerHTML = item.risks.map(([title, desc, riskScore, cls]) => `
+        <div class="risk-item">
+          <div><h3>${title}</h3><p>${desc}</p></div>
+          <div class="risk-score ${cls}">${riskScore}</div>
+        </div>
+      `).join('');
+
+      document.getElementById('dimensionTable').innerHTML = dimensions.map(([label, key, meaning, source, threshold]) => {
+        const val = adjustByStrictness(item[key]);
+        return `<tr>
+          <td class="metric-name">${label}</td>
+          <td><span class="status-pill ${statusClass(val)}"><span class="dot"></span>${val}/100</span></td>
+          <td>${meaning}</td>
+          <td>${source}</td>
+          <td>${threshold}</td>
+        </tr>`;
+      }).join('');
+
+      const totalInventory = item.inventory.reduce((sum, row) => sum + row[1], 0);
+      document.getElementById('inventoryTable').innerHTML = item.inventory.map(([segment, urls, share, diagnosis]) => `
+        <tr><td class="metric-name">${segment}</td><td>${urls.toLocaleString()}</td><td>${share}</td><td>${diagnosis}</td></tr>
+      `).join('');
+
+      document.getElementById('crawlTable').innerHTML = item.crawlRows.map(([segment, hits, share, meaning]) => `
+        <tr><td class="metric-name">${segment}</td><td>${hits.toLocaleString()}</td><td>${share}</td><td>${meaning}</td></tr>
+      `).join('');
+
+      document.getElementById('priorityTable').innerHTML = item.priorities.map(([issue, urls, impact, effort, score, owner]) => `
+        <tr><td class="metric-name">${issue}</td><td>${urls}</td><td>${impact}</td><td>${effort}</td><td><span class="status-pill ${statusClass(score)}"><span class="dot"></span>${score}</span></td><td>${owner}</td></tr>
+      `).join('');
+    }
+
+    function renderMetrics() {
+      document.getElementById('metricAccordion').innerHTML = metrics.map((m, i) => `
+        <div class="accordion-item ${i === 0 ? 'open' : ''}">
+          <button class="accordion-button" type="button">
+            <span>${m.name}</span><span>+</span>
+          </button>
+          <div class="accordion-content">
+            <p><strong>Meaning:</strong> ${m.meaning}</p>
+            <div class="formula-box">${m.formula}</div>
+            <p><strong>Tools:</strong> ${m.tools}</p>
+            <p><strong>Recommendation:</strong> ${m.recommendation}</p>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.tab).classList.add('active');
+      });
+    });
+
+    document.getElementById('strictnessRange').addEventListener('input', (event) => {
+      const labels = {1: 'Lenient', 2: 'Balanced', 3: 'Strict'};
+      document.getElementById('strictnessLabel').textContent = labels[event.target.value];
+      render();
+    });
+
+    ['categorySelect', 'deviceSelect', 'periodSelect'].forEach(id => {
+      document.getElementById(id).addEventListener('change', render);
+    });
+
+    document.addEventListener('click', (event) => {
+      const button = event.target.closest('.accordion-button');
+      if (!button) return;
+      const item = button.closest('.accordion-item');
+      item.classList.toggle('open');
+    });
+
+    renderMetrics();
+    render();
+  </script>
+</body>
+</html>
